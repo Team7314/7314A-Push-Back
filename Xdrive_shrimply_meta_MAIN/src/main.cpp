@@ -130,11 +130,10 @@ void leftturn(int Lspeed, int Rspeed, int wt){
 
 
 void drivebrake(){
-
-LF.stop(brake);
-RF.stop(brake);
-LB.stop(brake);
-RB.stop(brake);
+  LF.stop(brake);
+  RF.stop(brake);
+  LB.stop(brake);
+  RB.stop(brake);
 }
 
 void g_print(){
