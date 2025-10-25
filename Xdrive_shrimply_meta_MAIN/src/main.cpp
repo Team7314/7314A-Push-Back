@@ -15,7 +15,7 @@ using namespace vex;
 competition Competition;
 brain Brain;
 controller Controller1;
-inertial gyroT(PORT10);
+inertial gyroT = inertial(PORT10);
 motor LF(PORT1, ratio18_1, false);
 motor RF(PORT2, ratio18_1, true);
 motor LB(PORT3, ratio18_1, false);
@@ -120,11 +120,12 @@ void drive(int Lspeed,int Rspeed, int wt){
 }
 
 void leftturn(int Lspeed, int Rspeed, int wt){
- LF.spin(reverse, Lspeed, pct);
- RF.spin(forward, Rspeed, pct);
- LB.spin(reverse, Lspeed, pct);
- RB.spin(forward, Rspeed, pct);
- wait (wt, msec);
+  //Turn for certain time spans
+  LF.spin(reverse, Lspeed, pct);
+  RF.spin(forward, Rspeed, pct);
+  LB.spin(reverse, Lspeed, pct);
+  RB.spin(forward, Rspeed, pct);
+  wait (wt, msec);
 }
 
 
@@ -132,7 +133,7 @@ void leftturn(int Lspeed, int Rspeed, int wt){
 void drivebrake(){
   LF.stop(brake);
   RF.stop(brake);
-  LB.stop(brake);
+  LB.stop(brake); 
   RB.stop(brake);
 }
 
@@ -147,17 +148,17 @@ void gyroturn(float target)
   float error = target-heading;
   float kp = 5.0;
   float speed = kp * error;
-  gyroT.setRotation(0.0, degrees); // resets gyro to 0 degrees
+  gyroT.setRotation(0.0, deg); // resets gyro to 0 degrees
 
   while(fabs(error) >= accuracy) // fabs(error) = float absolute value(error)
   {
     speed=kp*error;
     drive(speed, -speed, 10);
-    heading = gyroT.rotation(degrees);
+    heading = gyroT.rotation(deg);
     error = target - heading;
     Brain.Screen.printAt(10,30, "error= %0.2f", error);
   }
-drive(0, -0, 0);
+  drive(0, 0, 0);
   /*drivebrake();
   heading = gyroT.rotation(degrees);
   Brain.Screen.printAt(10, 30, "heading= %0.2f", heading);
@@ -165,23 +166,22 @@ drive(0, -0, 0);
 }
 
 void inchdrive(float target)
-
-
-{float x = 0.0;
-float accuracy = 1.0;
-float error = target - x;
-float kp = 7.06;
-float speed = kp * error;
-LF.setPosition(0, rev);
-
-while (fabs(error) >= accuracy)
 {
-  speed = kp * error;
-  drive(10, 10, 10);
-  x = LF.position(rev) * 3.25 * 3.14 * 0.6;
-  error = target - x;
-}
-drivebrake();
+  float x = 0.0;
+  float accuracy = 1.0;
+  float error = target - x;
+  float kp = 7.06;
+  float speed = kp * error;
+  LF.setPosition(0, rev);
+
+  while (fabs(error) >= accuracy)
+  {
+    speed = kp * error;
+    drive(10, 10, 10);
+    x = LF.position(rev) * 3.25 * 3.14 * 0.6;
+    error = target - x;
+  }
+  drivebrake();
 }
 
 
@@ -204,9 +204,9 @@ void pre_auton(void) {
   // All activities that occur before the competition starts
   // Example: clearing encoders, setting servo positions, ...
 
-gyroT.calibrate();
-while (gyroT.isCalibrating());
-wait (50, msec);
+  gyroT.calibrate();
+  while (gyroT.isCalibrating());
+  wait (50, msec);
 }
 
 /*---------------------------------------------------------------------------*/
