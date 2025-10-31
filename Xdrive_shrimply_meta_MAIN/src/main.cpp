@@ -190,7 +190,7 @@ void gyroturn(float target)
   float heading = 0.0; //initialize a variable for heading, note these are copies of yunzes work, are temporary
   float accuracy = 2.0; //how accurate to make the turn in degrees
   float error = target-heading;
-  float kp = 5.0;
+  float kp = 2.0;
   float speed = kp * error;
   gyroT.setRotation(0.0, deg); // resets gyro to 0 degrees
 
@@ -202,7 +202,8 @@ void gyroturn(float target)
     error = target - heading;
     Brain.Screen.printAt(10,30, "error= %0.2f", error);
   }
-  driveTank(0, 0, 0);
+  drivebrake();
+  //driveTank(0, 0, 0);
   /*drivebrake();
   heading = gyroT.rotation(degrees);
   Brain.Screen.printAt(10, 30, "heading= %0.2f", heading);
@@ -221,8 +222,8 @@ void inchdrive(float target)
   while (fabs(error) >= accuracy)
   {
     speed = kp * error;
-    driveTank(10, 10, 10);
-    x = LF.position(rev) * 3.25 * 3.14 * 0.6;
+    driveTank(speed, speed, 10);
+    x = LF.position(rev) * 3.25 * 3.14 * 0.7;
     error = target - x;
   }
   drivebrake();
@@ -265,9 +266,10 @@ void pre_auton(void) {
 
 void autonomous(void) {
   
-  
- inchdrive(10);
- wait(500, msec);
+ inchdrive(24);
+ drivebrake();
+gyroturn(90);
+ wait(1000, msec);
  gyroturn(-90);
   // ..........................................................................
   // Insert autonomous user code here.
