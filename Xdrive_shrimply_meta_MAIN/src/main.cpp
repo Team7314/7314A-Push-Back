@@ -85,7 +85,7 @@ void Display()
   double IL2Curr = IL2.current(amp);
   double IL2Temp = IL2.temperature(celsius);
 
-	if (LF.installed()){
+	if (LF.installed()) {
 		MotorDisplay(1, leftFrontCurr, leftFrontTemp);
 		Brain.Screen.printAt(300, YOFFSET + 1, "LeftFront");
 	} else {
@@ -148,7 +148,7 @@ Brain.Screen.printAt(300, YOFFSET + 211, "IL2");
 }
 }
 
-void drive(int Lspeed,int Rspeed, int wt){
+void driveTank(int Lspeed,int Rspeed, int wt){
   LF.spin(forward, Lspeed, pct);
   RF.spin(forward, Rspeed, pct);
   LB.spin(forward, Lspeed, pct);
@@ -165,6 +165,13 @@ void leftturn(int Lspeed, int Rspeed, int wt){
   wait (wt, msec);
 }
 
+void Xdrive(int LFspeed, int RFspeed, int LBspeed, int RBspeed, int wt){
+  LF.spin(forward, LFspeed, pct);
+  RF.spin(forward, RFspeed, pct);
+  LB.spin(forward, LBspeed, pct);
+  RB.spin(forward, RBspeed, pct);
+  wait(wt, msec);
+}
 
 
 void drivebrake(){
@@ -190,12 +197,12 @@ void gyroturn(float target)
   while(fabs(error) >= accuracy) // fabs(error) = float absolute value(error)
   {
     speed=kp*error;
-    drive(speed, -speed, 10);
+    driveTank(speed, -speed, 10);
     heading = gyroT.rotation(deg);
     error = target - heading;
     Brain.Screen.printAt(10,30, "error= %0.2f", error);
   }
-  drive(0, 0, 0);
+  driveTank(0, 0, 0);
   /*drivebrake();
   heading = gyroT.rotation(degrees);
   Brain.Screen.printAt(10, 30, "heading= %0.2f", heading);
@@ -214,7 +221,7 @@ void inchdrive(float target)
   while (fabs(error) >= accuracy)
   {
     speed = kp * error;
-    drive(10, 10, 10);
+    driveTank(10, 10, 10);
     x = LF.position(rev) * 3.25 * 3.14 * 0.6;
     error = target - x;
   }
@@ -322,11 +329,13 @@ void usercontrol(void) {
     int X = Controller1.Axis4.position(); // Left and Right
     int R = Controller1.Axis1.position(); // Rotational
 
+    Xdrive(Y + X + R,Y - X + R,Y - X - R,Y + X - R, 10);
+    /*
     LF.spin(forward, Y + X + R, percent);
     LB.spin(forward, Y - X + R, percent);
     RF.spin(forward, Y - X - R, percent);
     RB.spin(forward, Y + X - R, percent);
-
+*/
 
 
     // This is the main execution loop for the user control program.
