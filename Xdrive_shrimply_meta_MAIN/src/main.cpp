@@ -76,7 +76,14 @@ void Display()
 	double rightFrontTemp = RF.temperature(celsius);
 	double rightBackCurr = RB.current(amp);
 	double rightBackTemp = RB.temperature(celsius);
-
+  double IRCurr = IR.current(amp);
+  double IRTemp = IR.temperature(celsius);
+  double ILCurr = IL.current(amp);
+  double ILTemp = IL.temperature(celsius);
+  double IR2Curr = IR2.current(amp);
+  double IR2Temp = IR2.temperature(celsius);
+  double IL2Curr = IL2.current(amp);
+  double IL2Temp = IL2.temperature(celsius);
 
 	if (LF.installed()){
 		MotorDisplay(1, leftFrontCurr, leftFrontTemp);
@@ -109,6 +116,36 @@ void Display()
 		Brain.Screen.printAt(5, YOFFSET + 91, "RightBack Problem");
 	}
 
+if (IR.installed()) {
+MotorDisplay(121, IRCurr, IRTemp);
+Brain.Screen.printAt(300, YOFFSET + 121, "IR");
+}else{
+  Brain.Screen.printAt(5, YOFFSET + 121, "IR Problem");
+}
+
+
+if (IL.installed()) {
+MotorDisplay(151, ILCurr, ILTemp);
+Brain.Screen.printAt(300, YOFFSET + 151, "IL");
+}else{
+  Brain.Screen.printAt(5, YOFFSET + 151, "IL Problem");
+}
+
+
+if(IR2.installed()) {
+MotorDisplay(181, IR2Curr, IR2Temp);
+Brain.Screen.printAt(300, YOFFSET + 181, "IR2");
+}else{
+  Brain.Screen.printAt(5, YOFFSET + 181, "IR2 Problem");
+}
+
+
+if(IL2.installed()) {
+  MotorDisplay(211, IL2Curr, IL2Temp);
+Brain.Screen.printAt(300, YOFFSET + 211, "IL2");
+}else{
+  Brain.Screen.printAt(5, YOFFSET + 211, "Il2 Problem");
+}
 }
 
 void drive(int Lspeed,int Rspeed, int wt){
@@ -253,7 +290,9 @@ void usercontrol(void) {
        
     if( Controller1.ButtonA.pressing()) {
         IR.spin(reverse, Ispeed, pct);
-        IR2.spin(reverse, Ispeed, pct);
+        IL.stop(brake);
+        IR2.spin(reverse, 100, pct);
+        IL2.spin(reverse, Ispeed, pct);
     }
     else if( Controller1.ButtonX.pressing()) {
         IL.spin(forward, Ispeed, pct);
@@ -262,13 +301,13 @@ void usercontrol(void) {
     else if( Controller1.ButtonY.pressing()) {
       IL.spin(forward, Ispeed, pct);
       IR.spin(reverse, Ispeed, pct);
-      IR2.spin(forward, 40, pct);
+      IR2.spin(forward, Ispeed, pct);
     }
       
     else if(Controller1.ButtonB.pressing()) {
       IL.spin(forward, Ispeed, pct);
       IR.spin(reverse, Ispeed, pct);
-      IL2.spin(forward, Ispeed, pct);
+      IL2.spin(forward, 75, pct);
       IR2.spin(reverse, Ispeed, pct);
     }
     else if(Controller1.ButtonR2.pressing()) {
