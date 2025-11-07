@@ -24,6 +24,7 @@ motor IR(PORT5, ratio6_1, true);
 motor IL(PORT6, ratio6_1, false);
 motor IR2(PORT7, ratio6_1, true);
 motor IL2(PORT8, ratio6_1, false);
+digital_out Deloader = digital_out(Brain.ThreeWirePort.A);
 //functions or something i guess
 double YOFFSET = 50; //offset for the display
 //Writes a line for the diagnostics of a motor on the Brain
@@ -229,6 +230,38 @@ void inchdrive(float target)
   drivebrake();
 }
 
+void Intake(int Ispeed, int wt) {
+IR.spin(reverse, Ispeed, pct);
+   IL.stop(brake);
+   IR2.spin(reverse, 100, pct);
+   IL2.spin(reverse, Ispeed, pct);
+}
+
+void Bottomscore(int Ispeed, int wt) {
+        IR.spin(reverse, Ispeed, pct);
+        IL.stop(brake);
+        IR2.spin(reverse, 100, pct);
+        IL2.spin(reverse, Ispeed, pct);
+}
+
+void Middlescore(int Ispeed, int wt) {
+IL.spin(forward, Ispeed, pct);
+      IR.spin(reverse, Ispeed, pct);
+      IR2.spin(forward, 75, pct);
+}
+
+void Topscore(int Ispeed, int wt) {
+    IL.spin(forward, Ispeed, pct);
+    IR.spin(reverse, Ispeed, pct);
+    IR2.spin(forward, 75, pct);
+}
+
+void Ibrake(){
+  IL.stop(brake);
+  IR.stop(brake);
+  IR2.stop(brake);
+  IL2.stop(brake);
+}
 
 
 
@@ -252,6 +285,7 @@ void pre_auton(void) {
   gyroT.calibrate();
   while (gyroT.isCalibrating());
   wait (50, msec);
+  Deloader.set(false);
 }
 
 /*---------------------------------------------------------------------------*/
@@ -266,11 +300,6 @@ void pre_auton(void) {
 
 void autonomous(void) {
   
- inchdrive(24);
- drivebrake();
-gyroturn(90);
- wait(1000, msec);
- gyroturn(-90);
   // ..........................................................................
   // Insert autonomous user code here.
   // ..........................................................................
@@ -303,41 +332,61 @@ void usercontrol(void) {
         IR2.spin(reverse, 100, pct);
         IL2.spin(reverse, Ispeed, pct);
     }
-    else if( Controller1.ButtonX.pressing()) {
-        IL.spin(forward, Ispeed, pct);
-        IR.spin(forward, Ispeed, pct);
+    else if( Controller1.ButtonB.pressing()) {
+       IL.spin(reverse, Ispeed, pct);
+       IR.spin(forward, Ispeed, pct);
+       IL.spin(forward, Ispeed, pct);
+       IR.spin(forward, Ispeed, pct);
     }
     else if( Controller1.ButtonY.pressing()) {
+      IL.spin(reverse, Ispeed, pct);
+      IR.spin(reverse, Ispeed, pct);
+      IR2.spin(forward, 75, pct);
+      wait(100, msec);
       IL.spin(forward, Ispeed, pct);
       IR.spin(reverse, Ispeed, pct);
-      IR2.spin(forward, Ispeed, pct);
+      IR2.spin(forward, 75, pct);
     }
-      
-    else if(Controller1.ButtonB.pressing()) {
+    else if(Controller1.ButtonX.pressing()) {
+      IL.spin(reverse, Ispeed, pct);
+      IR.spin(reverse, Ispeed, pct);
+      IL2.spin(forward, 70, pct);
+      IR2.spin(reverse, 75, pct);
+      wait(100, msec);
       IL.spin(forward, Ispeed, pct);
       IR.spin(reverse, Ispeed, pct);
-      IL2.spin(forward, 75, pct);
-      IR2.spin(reverse, Ispeed, pct);
+      IL2.spin(forward, 70, pct);
+      IR2.spin(reverse, 75, pct);
     }
+   /* else if(Controller1.ButtonUp.pressing()) {
+      IL.spin(reverse, Ispeed, pct);
+      wait(100, msec);
+    }*/
     else if(Controller1.ButtonR2.pressing()) {
       IL.stop(brake);
       IR.stop(brake);
       IR2.stop(brake);
       IL2.stop(brake);
     }
-    
+    else if(Controller1.ButtonL2.pressing()) {
+      Deloader.set(true);
+    }
+    else if(Controller1.ButtonL1.pressing()){
+      Deloader.set(false);
+
+    }
 
     int Y = Controller1.Axis3.position(); // Forward/Backward
     int X = Controller1.Axis4.position(); // Left and Right
     int R = Controller1.Axis1.position(); // Rotational
 
-    Xdrive(Y + X + R,Y - X + R,Y - X - R,Y + X - R, 10);
-    /*
+    //Xdrive(Y + X + R,Y - X + R,Y - X - R,Y + X - R, 10);
+    
     LF.spin(forward, Y + X + R, percent);
     LB.spin(forward, Y - X + R, percent);
     RF.spin(forward, Y - X - R, percent);
     RB.spin(forward, Y + X - R, percent);
-*/
+
 
 
     // This is the main execution loop for the user control program.
