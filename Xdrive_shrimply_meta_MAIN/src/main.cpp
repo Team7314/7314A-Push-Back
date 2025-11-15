@@ -25,9 +25,11 @@ motor IL(PORT6, ratio6_1, false);
 motor IR2(PORT7, ratio6_1, true);
 motor IL2(PORT8, ratio6_1, false);
 digital_out Deloader = digital_out(Brain.ThreeWirePort.A);
+digital_out GD = digital_out(Brain.ThreeWirePort.B);
 //functions or something i guess
 double YOFFSET = 50; //offset for the display
 //Writes a line for the diagnostics of a motor on the Brain
+bool R1Pressed = false;
 
 void MotorDisplay(double y, double curr, double temp)
 {
@@ -319,7 +321,7 @@ void autonomous(void) {
 void usercontrol(void) {
   
   Brain.resetTimer();
-   int Ispeed = 80;
+   //int Ispeed = 80;
   // User control code here, inside the loop
   //int T = 0;
   while (1) {
@@ -327,34 +329,35 @@ void usercontrol(void) {
     wait (1, msec);
        
     if( Controller1.ButtonA.pressing()) {
-        IR.spin(reverse, Ispeed, pct);
+        IR.spin(reverse, 80, pct);
         IL.stop(brake);
         IR2.spin(reverse, 100, pct);
-        IL2.spin(reverse, Ispeed, pct);
+        IL2.spin(reverse, 80, pct);
     }
     else if( Controller1.ButtonB.pressing()) {
-       IL.spin(reverse, Ispeed, pct);
-       IR.spin(forward, Ispeed, pct);
-       IL.spin(forward, Ispeed, pct);
-       IR.spin(forward, Ispeed, pct);
+       IL.spin(reverse, 80, pct);
+       IR.spin(forward, 80, pct);
+       wait(100, msec);
+       IL.spin(forward, 80, pct);
+       IR.spin(forward, 80, pct);
     }
     else if( Controller1.ButtonY.pressing()) {
-      IL.spin(reverse, Ispeed, pct);
-      IR.spin(reverse, Ispeed, pct);
+      IL.spin(reverse, 80, pct);
+      IR.spin(reverse, 80, pct);
       IR2.spin(forward, 75, pct);
       wait(100, msec);
-      IL.spin(forward, Ispeed, pct);
-      IR.spin(reverse, Ispeed, pct);
+      IL.spin(forward, 80, pct);
+      IR.spin(reverse, 80, pct);
       IR2.spin(forward, 75, pct);
     }
     else if(Controller1.ButtonX.pressing()) {
-      IL.spin(reverse, Ispeed, pct);
-      IR.spin(reverse, Ispeed, pct);
+      IL.spin(reverse, 80, pct);
+      IR.spin(reverse, 80, pct);
       IL2.spin(forward, 70, pct);
       IR2.spin(reverse, 75, pct);
       wait(100, msec);
-      IL.spin(forward, Ispeed, pct);
-      IR.spin(reverse, Ispeed, pct);
+      IL.spin(forward, 80, pct);
+      IR.spin(reverse, 80, pct);
       IL2.spin(forward, 70, pct);
       IR2.spin(reverse, 75, pct);
     }
@@ -371,10 +374,25 @@ void usercontrol(void) {
     else if(Controller1.ButtonL2.pressing()) {
       Deloader.set(true);
     }
-    else if(Controller1.ButtonL1.pressing()){
-      Deloader.set(false);
+    
+    else if(Controller1.ButtonR1.pressing()){
+      // set your bool to True
+      R1Pressed = true;
+      GD.set(true);
+    }
+    // use your if statement to check if bool is True AND button pressed
+    else if (Controller1.ButtonR1.pressing() and R1Pressed == true){
+      GD.set(false);
 
     }
+    
+    else if(Controller1.ButtonL1.pressing()){
+      Deloader.set(false);
+    }
+    }
+
+
+
 
     int Y = Controller1.Axis3.position(); // Forward/Backward
     int X = Controller1.Axis4.position(); // Left and Right
@@ -401,7 +419,7 @@ void usercontrol(void) {
     wait(20, msec); // Sleep the task for a short amount of time to
                     // prevent wasted resources.
   }
-}
+
 
 //
 // Main will set up the competition functions and callbacks.
