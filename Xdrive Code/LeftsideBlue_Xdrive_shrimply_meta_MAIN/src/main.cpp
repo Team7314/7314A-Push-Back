@@ -43,15 +43,16 @@ void colorsensor(void) {
   const bool FOUND_RED = THESENSOR.hue() < RED_VAL;
   if(FOUND_BLUE){
     //the color is Blue
-    IR2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function 
+    IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function 
+     wait (500, msec);
     // Keep
   }
   else if (FOUND_RED){
-    IR2.spin(forward, SPIN_COUNTER_CLOCKWISE, pct);
+    IL2.spin(forward, SPIN_COUNTER_CLOCKWISE, pct);
     // Eject
   }
   else{
-    IR2.spin(forward, 0, pct);
+    IL2.spin(forward, 0, pct);
   }
 }
 //functions or something i guess

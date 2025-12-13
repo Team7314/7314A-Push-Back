@@ -27,25 +27,40 @@ motor IR(PORT5, ratio6_1, true);
 motor IL(PORT6, ratio6_1, false);
 motor IR2(PORT7, ratio6_1, true);
 motor IL2(PORT8, ratio6_1, false);
-optical COLORsensor = optical (PORT11);
-color Colorsensor = color(PORT12);
+optical THESENSOR = optical (PORT11);
 digital_out Deloader = digital_out(Brain.ThreeWirePort.A);
+
+
+int value =  THESENSOR.hue();
+const int RED_VAL = 10;
+const int BLUE_VAL = 125;
+const int MOTOR_SPEED = 80;
+const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
+const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
+
+void colorsensor(void) {
+  const bool FOUND_BLUE = THESENSOR.hue() >= BLUE_VAL;
+  const bool FOUND_RED = THESENSOR.hue() < RED_VAL;
+  if(FOUND_BLUE){
+    //the color is Blue
+    IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function 
+     wait (500, msec);
+    // Keep
+  }
+  else if (FOUND_RED){
+    IL2.spin(forward, SPIN_COUNTER_CLOCKWISE, pct);
+    // Eject
+  }
+  else{
+    IL2.spin(forward, 0, pct);
+  }
+}
 //functions or something i guess
 double YOFFSET = 50; //offset for the display
 //Writes a line for the diagnostics of a motor on the Brain
-int value = Colorsensor.hue();
-bool Red=true;
 
 
-void colorcheck() {
- if (value>= 125) {
-   IR.spin(reverse, 80, pct);
-    IL.stop(brake);
-    IR2.spin(reverse, 100, pct);
-   IL2.spin(reverse, 80, pct);
- }
- else {}
-}
+
 
 
 
