@@ -33,37 +33,37 @@ optical THESENSOR (PORT11);
 // functions or something i guess \_[-_-]_/
 int value =  THESENSOR.hue();
 const int RED_VAL = 10;
-const int BLUE_VAL = 125;
+const int BLUE_VAL1 = 120;
+const int BLUE_VAL2 = 210;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
 
-void colorsensor(void) {
-  const bool FOUND_BLUE = THESENSOR.hue() >= BLUE_VAL;
-  const bool FOUND_RED = THESENSOR.hue() < RED_VAL;
-  if(FOUND_BLUE){
-    //the color is Blue
-    IL2.spin(forward, SPIN_COUNTER_CLOCKWISE, pct); //call the color sorting function 
+void colorsensor(bool) {
+  const bool FOUND_BLUE = THESENSOR.hue() >= BLUE_VAL1 && THESENSOR.hue() <= BLUE_VAL2;
+  const bool FOUND_RED = THESENSOR.hue() <= RED_VAL;
+  /*if(FOUND_RED){
+    //the color is red
      wait (500, msec);
+    IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function 
+    
     // Keep
-  }
-  else if (FOUND_RED){
-    IL2.spin(forward, SPIN_CLOCKWISE, pct);
+  }*/
+  if (FOUND_BLUE){
+    IL2.spin(forward, 80, pct);
+    wait(150, msec);
     // Eject
   }
-  else{
-    IL2.spin(forward, 0, pct);
+  else if (FOUND_RED) {
+    IL2.spin(reverse, 80,  pct);
+    wait(150, msec);
   }
+  else { //the color is neither red nor blue
+    IL2.stop();}
 }
 //functions or something i guess
 double YOFFSET = 50; //offset for the display
 //Writes a line for the diagnostics of a motor on the Brain
-
-
-
-
-
-
 
 
 void MotorDisplay(double y, double curr, double temp)
@@ -313,8 +313,12 @@ IR.spin(reverse, Ispeed, pct);
   IR2.spin(reverse, 100, pct);
   IL2.spin(reverse, Ispeed, pct);
 }
-
-
+void colorintake(int Ispeed) {
+  IR.spin(reverse, Ispeed, pct);
+  IL.stop(brake);
+  IR2.spin(reverse, 100, pct);
+  colorsensor(true);
+}
 void Bottomscore(int Ispeed, int wt) {
  IL.spin(forward, Ispeed, pct);
  IR.spin(forward, Ispeed, pct);
@@ -374,7 +378,7 @@ void pre_auton(void) {
  while (gyroT.isCalibrating());
  wait (50, msec);
  Deloader.set(false);
-}
+ }
 
 
 /*---------------------------------------------------------------------------*/
@@ -401,15 +405,14 @@ void autonomous(void) {
  inchdrive(5.5);
  wait(500, msec);
  gyroturn(45);
- sidedrive(5.2);
- inchdrive(7.2);
+ sidedrive(4.9);
+ inchdrive(9);
  wait(100, msec);
- IL.spin(forward, 32, pct);
-     IR.spin(reverse, 100, pct);
-     IR2.spin(forward, 30, pct);
-     wait(10, sec);
-     inchdrive(-8);
-     gyroturn(-135);
+ Middlescore(-65, 10);
+ wait(100, msec);
+Middlescore(65, 10);
+     /*inchdrive(-8);
+     gyroturn(-135);*/
  /*inchdrive(-10);
  sid
  inchdrive(4.25);
@@ -437,27 +440,26 @@ void autonomous(void) {
 void usercontrol(void) {
   Brain.resetTimer();
   int Ispeed = 80;
+  bool vexc = false;
  // User control code here, inside the loop
  //int T = 0;
  while (1) {
+  colorsensor(vexc);
    Display();
-   colorsensor();
    wait (1, msec);
-     
-   if( Controller1.ButtonA.pressing()) {
-       IR.spin(reverse, Ispeed, pct);
-       IL.stop(brake);
-       IR2.spin(reverse, 100, pct);
-       IL2.spin(reverse, Ispeed, pct);
-   }
-   else if( Controller1.ButtonB.pressing()) {
+   if( Controller1.ButtonA.pressing()) {         //Intake       
+      colorintake(Ispeed);
+      vexc = true;  
+    }
+   else if( Controller1.ButtonB.pressing()) {    //Bottom Score
       IL.spin(reverse, Ispeed, pct);
       IR.spin(forward, Ispeed, pct);
       wait(100, msec);
       IL.spin(forward, Ispeed, pct);
       IR.spin(forward, Ispeed, pct);
+      vexc = false;
    }
-   else if( Controller1.ButtonY.pressing()) {
+   else if( Controller1.ButtonY.pressing()) {    //middle Score
      IL.spin(reverse, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
@@ -465,8 +467,9 @@ void usercontrol(void) {
      IL.spin(forward, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
+     vexc = false;
    }
-   else if(Controller1.ButtonX.pressing()) {
+   else if(Controller1.ButtonX.pressing()) {      //Top score 
      IL.spin(reverse, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IL2.spin(forward, 70, pct);
@@ -476,17 +479,15 @@ void usercontrol(void) {
      IR.spin(reverse, Ispeed, pct);
      IL2.spin(forward, 70, pct);
      IR2.spin(reverse, 75, pct);
+     vexc = false;
    }
-  /* else if(Controller1.ButtonUp.pressing()) {
-     IL.spin(reverse, Ispeed, pct);
-     wait(100, msec);
-   }*/
-   /*else if(Controller1.ButtonR2.pressing()) {
+  
+   else if(Controller1.ButtonLeft.pressing()) {
      IL.stop(brake);
      IR.stop(brake);
      IR2.stop(brake);
      IL2.stop(brake);
-   }*/
+   }
    else if(Controller1.ButtonR1.pressing()) {
     Descorer.set(true);
    }

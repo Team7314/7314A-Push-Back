@@ -362,9 +362,6 @@ IR.spin(reverse, Ispeed, pct);
   IL2.spin(reverse, Ispeed, pct);
 }
 
-
-
-
 void Bottomscore(int Ispeed, int wt) {
  IL.spin(forward, Ispeed, pct);
  IR.spin(forward, Ispeed, pct);
@@ -463,7 +460,9 @@ void pre_auton(void) {
 void autonomous(void) {
   // ..........................................................................
  // Insert autonomous user code here.
-
+inchdrive(-8);
+wait(1, sec);
+Xdrive(100, 100, 100, 100, 1);
 
 
 

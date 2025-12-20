@@ -33,27 +33,34 @@ digital_out Deloader = digital_out(Brain.ThreeWirePort.A);
 
 int value =  THESENSOR.hue();
 const int RED_VAL = 10;
-const int BLUE_VAL = 125;
+const int BLUE_VAL1 = 120;
+const int BLUE_VAL2 = 210;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
 
-void colorsensor(void) {
-  const bool FOUND_BLUE = THESENSOR.hue() >= BLUE_VAL;
-  const bool FOUND_RED = THESENSOR.hue() < RED_VAL;
-  if(FOUND_BLUE){
-    //the color is Blue
-    IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function 
-     wait (500, msec);
-    // Keep
-  }
-  else if (FOUND_RED){
-    IL2.spin(forward, SPIN_COUNTER_CLOCKWISE, pct);
-    // Eject
-  }
-  else{
-    IL2.spin(forward, 0, pct);
-  }
+void colorsensor(bool) {
+  const bool FOUND_BLUE = THESENSOR.hue() >= BLUE_VAL1 && THESENSOR.hue() <= BLUE_VAL2;
+const bool FOUND_RED = THESENSOR.hue() <= RED_VAL;
+/*if(FOUND_RED){
+//the color is red
+wait (500, msec);
+IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function
+
+// Keep
+}*/
+if (FOUND_RED){
+IL2.spin(forward, 80, pct);
+wait(150, msec);
+// Eject
+}
+else if (FOUND_BLUE) {
+IL2.spin(reverse, 80, pct);
+wait(150, msec);
+}
+else { //the color is neither red nor blue
+IL2.stop();}
+
 }
 //functions or something i guess
 double YOFFSET = 50; //offset for the display
@@ -313,6 +320,14 @@ IR.spin(reverse, Ispeed, pct);
   IL2.spin(reverse, Ispeed, pct);
 }
 
+void colorintake(int Ispeed) {
+IR.spin(reverse, Ispeed, pct);
+IL.stop(brake);
+IR2.spin(reverse, 100, pct);
+colorsensor(true);
+}
+
+
 
 void Bottomscore(int Ispeed, int wt) {
  IL.spin(forward, Ispeed, pct);
@@ -431,17 +446,17 @@ void autonomous(void) {
 void usercontrol(void) {
   Brain.resetTimer();
   int Ispeed = 80;
+  bool vexc = false;
  // User control code here, inside the loop
  //int T = 0;
  while (1) {
    Display();
+   colorsensor(vexc);
    wait (1, msec);
      
    if( Controller1.ButtonA.pressing()) {
-       IR.spin(reverse, Ispeed, pct);
-       IL.stop(brake);
-       IR2.spin(reverse, 100, pct);
-       IL2.spin(reverse, Ispeed, pct);
+    colorintake(Ispeed);
+    vexc = true;
    }
    else if( Controller1.ButtonB.pressing()) {
       IL.spin(reverse, Ispeed, pct);
@@ -449,6 +464,7 @@ void usercontrol(void) {
       wait(100, msec);
       IL.spin(forward, Ispeed, pct);
       IR.spin(forward, Ispeed, pct);
+      vexc = false;
    }
    else if( Controller1.ButtonY.pressing()) {
      IL.spin(reverse, Ispeed, pct);
@@ -458,6 +474,7 @@ void usercontrol(void) {
      IL.spin(forward, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
+     vexc = false;
    }
    else if(Controller1.ButtonX.pressing()) {
      IL.spin(reverse, Ispeed, pct);
@@ -469,11 +486,14 @@ void usercontrol(void) {
      IR.spin(reverse, Ispeed, pct);
      IL2.spin(forward, 70, pct);
      IR2.spin(reverse, 75, pct);
+     vexc = false;
    }
-  /* else if(Controller1.ButtonUp.pressing()) {
-     IL.spin(reverse, Ispeed, pct);
-     wait(100, msec);
-   }*/
+  else if (Controller1.ButtonLeft.pressing()) {
+IL.stop(brake);
+     IR.stop(brake);
+     IR2.stop(brake);
+     IL2.stop(brake);
+  }
    else if(Controller1.ButtonR2.pressing()) {
      IL.stop(brake);
      IR.stop(brake);
