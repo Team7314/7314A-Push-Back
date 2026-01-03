@@ -33,27 +33,71 @@ motor IR(PORT5, ratio6_1, true);
 motor IL(PORT6, ratio6_1, false);
 motor IR2(PORT7, ratio6_1, true);
 motor IL2(PORT8, ratio6_1, false);
-optical COLORsensor = optical (PORT11);
-color Colorsensor = color(PORT12);
+optical THESENSOR = optical (PORT11);
 digital_out Deloader = digital_out(Brain.ThreeWirePort.A);
+digital_out Descorer = digital_out(Brain.ThreeWirePort.B);
 //functions or something i guess
 double YOFFSET = 50; //offset for the display
 //Writes a line for the diagnostics of a motor on the Brain
-int value = Colorsensor.hue();
-bool Red=true;
 
+int value =  THESENSOR.hue();
+const int RED_VAL = 20;
+const int BLUE_VAL1 = 120;
+const int BLUE_VAL2 = 210;
+const int MOTOR_SPEED = 80;
+const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
+const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
 
-
-
-void colorcheck() {
- if (value>= 125) {
-   IR.spin(reverse, 80, pct);
-    IL.stop(brake);
-    IR2.spin(reverse, 100, pct);
-   IL2.spin(reverse, 80, pct);
- }
- else {}
+void colorsensor(bool vexc) {
+  const bool FOUND_BLUE = value >= BLUE_VAL1 && value <= BLUE_VAL2;
+  const bool FOUND_RED = value <= RED_VAL;
+  /*if(FOUND_RED){
+    //the color is red
+     wait (500, msec);
+    IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function 
+    
+    // Keep
+  }*/
+ if (vexc) {
+  if (FOUND_BLUE){
+    IL2.spin(forward, 80, pct);
+    wait(150, msec);
+    // Eject
+  }
+  else if (FOUND_RED) {
+    IL2.spin(reverse, 80,  pct);
+    wait(150, msec);
+  }
+  else { //the color is neither red nor blue
+    IL2.stop();}
 }
+}
+
+void Outakecolor(bool vexc) {
+  const bool FOUND_BLUE = value >= BLUE_VAL1 && value <= BLUE_VAL2;
+  const bool FOUND_RED = value <= RED_VAL;
+  /*if(FOUND_RED){
+    //the color is red
+     wait (500, msec);
+    IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function 
+    
+    // Keep
+  }*/
+ if (vexc) {
+  if (FOUND_BLUE){
+    IL2.spin(reverse, 80, pct);
+    wait(150, msec);
+    // Eject
+  }
+  else if (FOUND_RED) {
+    IL2.spin(forward, 80,  pct);
+    wait(150, msec);
+  }
+  else { //the color is neither red nor blue
+    IL2.stop();}
+}
+}
+
 
 
 
@@ -361,6 +405,14 @@ IR.spin(reverse, Ispeed, pct);
   IR2.spin(reverse, 100, pct);
   IL2.spin(reverse, Ispeed, pct);
 }
+void colorintake(int Ispeed) {
+  IR.spin(reverse, Ispeed, pct);
+  IL.stop(brake);
+  IR2.spin(reverse, 100, pct);
+  colorsensor(true);
+}
+
+
 
 void Bottomscore(int Ispeed, int wt) {
  IL.spin(forward, Ispeed, pct);
@@ -385,8 +437,12 @@ void Topscore(int Ispeed, int wt) {
      IL2.spin(forward, 70, pct);
      IR2.spin(reverse, 75, pct);
 }
-
-
+void ColorTopscore(int Ispeed, int wt) {
+    IL.spin(forward, Ispeed, pct);
+     IR.spin(reverse, Ispeed, pct);
+     IR2.spin(reverse, 75, pct);
+      Outakecolor(true);
+}
 
 
 void Ibrake(){
@@ -489,26 +545,26 @@ Xdrive(100, 100, 100, 100, 1);
 void usercontrol(void) {
   Brain.resetTimer();
   int Ispeed = 80;
+  bool vexc= false;
  // User control code here, inside the loop
  //int T = 0;
  while (1) {
    Display();
    wait (1, msec);
      
-   if( Controller1.ButtonA.pressing()) {
-       IR.spin(reverse, Ispeed, pct);
-       IL.stop(brake);
-       IR2.spin(reverse, 100, pct);
-       IL2.spin(reverse, Ispeed, pct);
-   }
-   else if( Controller1.ButtonB.pressing()) {
+   if( Controller1.ButtonA.pressing()) {         //Intake       
+      colorintake(Ispeed);
+      vexc = true;  
+    }
+   else if( Controller1.ButtonB.pressing()) {    //Bottom Score
       IL.spin(reverse, Ispeed, pct);
       IR.spin(forward, Ispeed, pct);
       wait(100, msec);
       IL.spin(forward, Ispeed, pct);
       IR.spin(forward, Ispeed, pct);
+      vexc = false;
    }
-   else if( Controller1.ButtonY.pressing()) {
+   else if( Controller1.ButtonY.pressing()) {    //middle Score
      IL.spin(reverse, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
@@ -516,8 +572,9 @@ void usercontrol(void) {
      IL.spin(forward, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
+     vexc = false;
    }
-   else if(Controller1.ButtonX.pressing()) {
+   else if(Controller1.ButtonX.pressing()) {      //Top score 
      IL.spin(reverse, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IL2.spin(forward, 70, pct);
@@ -527,26 +584,32 @@ void usercontrol(void) {
      IR.spin(reverse, Ispeed, pct);
      IL2.spin(forward, 70, pct);
      IR2.spin(reverse, 75, pct);
+     vexc = false;
    }
-  /* else if(Controller1.ButtonUp.pressing()) {
-     IL.spin(reverse, Ispeed, pct);
-     wait(100, msec);
-   }*/
+  
    else if(Controller1.ButtonLeft.pressing()) {
      IL.stop(brake);
      IR.stop(brake);
      IR2.stop(brake);
      IL2.stop(brake);
    }
+   else if(Controller1.ButtonR1.pressing()) {
+    Descorer.set(true);
+   }
+   else if(Controller1.ButtonR2.pressing()) {
+    Descorer.set(false);
+   }
    else if(Controller1.ButtonL2.pressing()) {
      Deloader.set(true);
    }
    else if(Controller1.ButtonL1.pressing()){
      Deloader.set(false);
-
-
-
-
+   }
+   else if(Controller1.ButtonLeft.pressing()) {
+    IL.stop(brake);
+     IR.stop(brake);
+     IR2.stop(brake);
+     IL2.stop(brake);
    }
 
 
