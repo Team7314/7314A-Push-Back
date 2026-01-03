@@ -4,12 +4,12 @@
 		"json": 2
 	},
 	"project": {
-		"name": "Xdrive_shrimply_meta",
+		"name": "LeftsideBlue_Xdrive_shrimply_meta_MAIN",
 		"description": "",
-		"creationDate": "7/18/2025, 5:09:05 PM",
+		"creationDate": "1/2/2026, 7:31:35 PM",
 		"platform": "V5",
 		"language": "cpp",
-		"slot": 5,
+		"slot": 3,
 		"sdkVersion": "V5_20240802_15_00_00",
 		"cpp": {
 			"includePath": [],
