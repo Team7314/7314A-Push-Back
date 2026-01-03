@@ -29,19 +29,19 @@ motor IR2(PORT7, ratio6_1, true);
 motor IL2(PORT8, ratio6_1, false);
 optical THESENSOR = optical (PORT11);
 digital_out Deloader = digital_out(Brain.ThreeWirePort.A);
-
+digital_out Descorer = digital_out(Brain.ThreeWirePort.B);
 
 int value =  THESENSOR.hue();
-const int RED_VAL = 10;
+const int RED_VAL = 20;
 const int BLUE_VAL1 = 120;
 const int BLUE_VAL2 = 210;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
 
-void colorsensor(bool) {
+void colorsensor(bool vexc) {
   const bool FOUND_BLUE = THESENSOR.hue() >= BLUE_VAL1 && THESENSOR.hue() <= BLUE_VAL2;
-const bool FOUND_RED = THESENSOR.hue() <= RED_VAL;
+  const bool FOUND_RED = THESENSOR.hue() <= RED_VAL;
 /*if(FOUND_RED){
 //the color is red
 wait (500, msec);
@@ -49,6 +49,7 @@ IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function
 
 // Keep
 }*/
+if (vexc){ 
 if (FOUND_RED){
 IL2.spin(forward, 80, pct);
 wait(150, msec);
@@ -60,7 +61,7 @@ wait(150, msec);
 }
 else { //the color is neither red nor blue
 IL2.stop();}
-
+}
 }
 //functions or something i guess
 double YOFFSET = 50; //offset for the display
@@ -324,7 +325,6 @@ void colorintake(int Ispeed) {
 IR.spin(reverse, Ispeed, pct);
 IL.stop(brake);
 IR2.spin(reverse, 100, pct);
-colorsensor(true);
 }
 
 
@@ -406,7 +406,7 @@ void autonomous(void) {
   // ..........................................................................
  // Insert autonomous user code here.
  inchdrive(6);
- sidedrive(3);
+ /*sidedrive(3);
  wait(100, msec);
  Intake(80, 1);
  wait(100, msec);
@@ -418,7 +418,7 @@ void autonomous(void) {
  sidedrive(-2.5);
  inchdrive(7.75);
  wait(100, msec);
- Bottomscore(65, 1);
+ Bottomscore(65, 1);*/
  /*inchdrive(-10);
  sidedrive(-15.5);
  inchdrive(4.25);
@@ -448,12 +448,10 @@ void usercontrol(void) {
   int Ispeed = 80;
   bool vexc = false;
  // User control code here, inside the loop
- //int T = 0;
  while (1) {
    Display();
    colorsensor(vexc);
-   wait (1, msec);
-     
+
    if( Controller1.ButtonA.pressing()) {
     colorintake(Ispeed);
     vexc = true;
@@ -477,6 +475,7 @@ void usercontrol(void) {
      vexc = false;
    }
    else if(Controller1.ButtonX.pressing()) {
+     vexc = false;
      IL.spin(reverse, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IL2.spin(forward, 70, pct);
@@ -486,36 +485,34 @@ void usercontrol(void) {
      IR.spin(reverse, Ispeed, pct);
      IL2.spin(forward, 70, pct);
      IR2.spin(reverse, 75, pct);
-     vexc = false;
+
    }
   else if (Controller1.ButtonLeft.pressing()) {
-IL.stop(brake);
+     vexc = false;
+     IL.stop(brake);
      IR.stop(brake);
      IR2.stop(brake);
      IL2.stop(brake);
   }
    else if(Controller1.ButtonR2.pressing()) {
-     IL.stop(brake);
-     IR.stop(brake);
-     IR2.stop(brake);
-     IL2.stop(brake);
+     vexc = false;
+     Descorer.set(true);
+   }
+   else if(Controller1.ButtonR1.pressing()) {
+    Descorer.set(false);
    }
    else if(Controller1.ButtonL2.pressing()) {
      Deloader.set(true);
+     vexc = false;
    }
    else if(Controller1.ButtonL1.pressing()){
      Deloader.set(false);
-
-
+     vexc = false;
    }
-
 
    int Y = Controller1.Axis3.position(); // Forward/Backward
    int X = Controller1.Axis4.position(); // Left and Right
    int R = Controller1.Axis1.position(); // Rotational
-
-
-   //Xdrive(Y + X + R,Y - X + R,Y - X - R,Y + X - R, 10);
   
    LF.spin(forward, Y + X + R, percent);
    LB.spin(forward, Y - X + R, percent);
@@ -536,7 +533,6 @@ IL.stop(brake);
    // Insert user code here. This is where you use the joystick values to
    // update your motors, etc.
    // ........................................................................
-   //T = T + 20;
    wait(20, msec); // Sleep the task for a short amount of time to
                    // prevent wasted resources.
  }

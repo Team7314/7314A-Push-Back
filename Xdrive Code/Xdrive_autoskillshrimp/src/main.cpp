@@ -532,7 +532,7 @@ void usercontrol(void) {
      IL.spin(reverse, Ispeed, pct);
      wait(100, msec);
    }*/
-   else if(Controller1.ButtonR2.pressing()) {
+   else if(Controller1.ButtonLeft.pressing()) {
      IL.stop(brake);
      IR.stop(brake);
      IR2.stop(brake);

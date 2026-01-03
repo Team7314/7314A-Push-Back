@@ -32,14 +32,13 @@ digital_out Deloader = digital_out(Brain.ThreeWirePort.A);
 digital_out Descorer = digital_out(Brain.ThreeWirePort.B);
 
 int value =  THESENSOR.hue();
-const int RED_VAL = 10;
 const int BLUE_VAL = 125;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
 
-void colorsensor(bool) {
-  const int RED_VAL = 10;
+void colorsensor(bool vexc) {
+  const int RED_VAL = 20;
 const int BLUE_VAL1 = 120;
 const int BLUE_VAL2 = 210;
 const int MOTOR_SPEED = 80;
@@ -55,6 +54,7 @@ IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function
 
 // Keep
 }*/
+if (vexc) {
 if (FOUND_BLUE){
 IL2.spin(forward, 80, pct);
 wait(150, msec);
@@ -67,7 +67,7 @@ wait(150, msec);
 else { //the color is neither red nor blue
 IL2.stop();}
 }
-
+}
 //functions or something i guess
 double YOFFSET = 50; //offset for the display
 //Writes a line for the diagnostics of a motor on the Brain
@@ -423,7 +423,7 @@ void autonomous(void) {
  sidedrive(-2);
  inchdrive(7);
  wait(100, msec);
- //Bottomscore(65, 1);
+ Bottomscore(65, 1);
  /*inchdrive(-10);
  sidedrive(-15.5);
  inchdrive(4.25);

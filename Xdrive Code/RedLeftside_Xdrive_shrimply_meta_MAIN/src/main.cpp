@@ -32,14 +32,14 @@ digital_out Descorer = digital_out(Brain.ThreeWirePort.B);
 optical THESENSOR (PORT11);
 // functions or something i guess \_[-_-]_/
 int value =  THESENSOR.hue();
-const int RED_VAL = 10;
+const int RED_VAL = 20;
 const int BLUE_VAL1 = 120;
 const int BLUE_VAL2 = 210;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
 
-void colorsensor(bool) {
+void colorsensor(bool vexc) {
   const bool FOUND_BLUE = THESENSOR.hue() >= BLUE_VAL1 && THESENSOR.hue() <= BLUE_VAL2;
   const bool FOUND_RED = THESENSOR.hue() <= RED_VAL;
   /*if(FOUND_RED){
@@ -49,6 +49,7 @@ void colorsensor(bool) {
     
     // Keep
   }*/
+ if (vexc) {
   if (FOUND_BLUE){
     IL2.spin(forward, 80, pct);
     wait(150, msec);
@@ -60,6 +61,7 @@ void colorsensor(bool) {
   }
   else { //the color is neither red nor blue
     IL2.stop();}
+}
 }
 //functions or something i guess
 double YOFFSET = 50; //offset for the display
@@ -410,7 +412,7 @@ void autonomous(void) {
  wait(100, msec);
  Middlescore(-65, 10);
  wait(100, msec);
-Middlescore(65, 10);
+//Middlescore(65, 10);
      /*inchdrive(-8);
      gyroturn(-135);*/
  /*inchdrive(-10);
