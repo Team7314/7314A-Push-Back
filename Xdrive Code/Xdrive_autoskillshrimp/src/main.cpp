@@ -33,7 +33,7 @@ motor IR(PORT5, ratio6_1, true);
 motor IL(PORT6, ratio6_1, false);
 motor IR2(PORT7, ratio6_1, true);
 motor IL2(PORT8, ratio6_1, false);
-optical THESENSOR = optical (PORT11);
+optical THESENSOR (PORT11);
 digital_out Deloader = digital_out(Brain.ThreeWirePort.A);
 digital_out Descorer = digital_out(Brain.ThreeWirePort.B);
 //functions or something i guess
@@ -47,10 +47,12 @@ const int BLUE_VAL2 = 210;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
+bool vexc = false;
+bool vexc2 = false;
 
-void colorsensor(bool vexc) {
-  const bool FOUND_BLUE = value >= BLUE_VAL1 && value <= BLUE_VAL2;
-  const bool FOUND_RED = value <= RED_VAL;
+void colorsensor(bool vexc, bool vexc2) {
+  const bool FOUND_BLUE = THESENSOR.hue() >= BLUE_VAL1 && THESENSOR.hue() <= BLUE_VAL2;
+  const bool FOUND_RED = THESENSOR.hue() <= RED_VAL;
   /*if(FOUND_RED){
     //the color is red
      wait (500, msec);
@@ -71,19 +73,7 @@ void colorsensor(bool vexc) {
   else { //the color is neither red nor blue
     IL2.stop();}
 }
-}
-
-void Outakecolor(bool vexc) {
-  const bool FOUND_BLUE = value >= BLUE_VAL1 && value <= BLUE_VAL2;
-  const bool FOUND_RED = value <= RED_VAL;
-  /*if(FOUND_RED){
-    //the color is red
-     wait (500, msec);
-    IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function 
-    
-    // Keep
-  }*/
- if (vexc) {
+else if (vexc2) {
   if (FOUND_BLUE){
     IL2.spin(reverse, 80, pct);
     wait(150, msec);
@@ -96,9 +86,8 @@ void Outakecolor(bool vexc) {
   else { //the color is neither red nor blue
     IL2.stop();}
 }
+
 }
-
-
 
 
 
@@ -398,19 +387,21 @@ void sidedrive(float target)
 
 
 
-
+/*
 void Intake(int Ispeed, int wt) {
 IR.spin(reverse, Ispeed, pct);
   IL.stop(brake);
   IR2.spin(reverse, 100, pct);
   IL2.spin(reverse, Ispeed, pct);
 }
+*/
+
 void colorintake(int Ispeed) {
   IR.spin(reverse, Ispeed, pct);
   IL.stop(brake);
   IR2.spin(reverse, 100, pct);
-  colorsensor(true);
-}
+
+  }
 
 
 
@@ -437,12 +428,11 @@ void Topscore(int Ispeed, int wt) {
      IL2.spin(forward, 70, pct);
      IR2.spin(reverse, 75, pct);
 }
-void ColorTopscore(int Ispeed, int wt) {
+void ColorTopscore(int Ispeed) {
     IL.spin(forward, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(reverse, 75, pct);
-      Outakecolor(true);
-}
+    }
 
 
 void Ibrake(){
@@ -545,16 +535,20 @@ Xdrive(100, 100, 100, 100, 1);
 void usercontrol(void) {
   Brain.resetTimer();
   int Ispeed = 80;
-  bool vexc= false;
+  vexc = false;
+  vexc2 = false;
  // User control code here, inside the loop
  //int T = 0;
  while (1) {
+   colorsensor(vexc, vexc2);
    Display();
    wait (1, msec);
      
    if( Controller1.ButtonA.pressing()) {         //Intake       
-      colorintake(Ispeed);
-      vexc = true;  
+     colorintake(Ispeed); 
+      vexc = false;  
+      vexc2 = false;
+      
     }
    else if( Controller1.ButtonB.pressing()) {    //Bottom Score
       IL.spin(reverse, Ispeed, pct);
@@ -563,6 +557,7 @@ void usercontrol(void) {
       IL.spin(forward, Ispeed, pct);
       IR.spin(forward, Ispeed, pct);
       vexc = false;
+      vexc2 = false;
    }
    else if( Controller1.ButtonY.pressing()) {    //middle Score
      IL.spin(reverse, Ispeed, pct);
@@ -573,6 +568,7 @@ void usercontrol(void) {
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
      vexc = false;
+     vexc2 = false;
    }
    else if(Controller1.ButtonX.pressing()) {      //Top score 
      IL.spin(reverse, Ispeed, pct);
@@ -585,6 +581,12 @@ void usercontrol(void) {
      IL2.spin(forward, 70, pct);
      IR2.spin(reverse, 75, pct);
      vexc = false;
+     vexc2 = false;
+   }
+   else if(Controller1.ButtonUp.pressing()) {    //Top score with color sensor
+    ColorTopscore(Ispeed);
+    vexc = false;
+    vexc2 = true;
    }
   
    else if(Controller1.ButtonLeft.pressing()) {
@@ -605,12 +607,7 @@ void usercontrol(void) {
    else if(Controller1.ButtonL1.pressing()){
      Deloader.set(false);
    }
-   else if(Controller1.ButtonLeft.pressing()) {
-    IL.stop(brake);
-     IR.stop(brake);
-     IR2.stop(brake);
-     IL2.stop(brake);
-   }
+   
 
 
 

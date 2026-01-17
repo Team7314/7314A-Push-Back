@@ -51,7 +51,7 @@ IL2.spin(forward, SPIN_CLOCKWISE, pct); //call the color sorting function
 }*/
 if (vexc) {
 if (FOUND_RED) {
-IL2.spin(forward, 80, pct);
+IL2.spin(forward, 55, pct);
 wait(150, msec);
 // Eject
 }
@@ -67,10 +67,21 @@ IL2.stop();}
 double YOFFSET = 50; //offset for the display
 //Writes a line for the diagnostics of a motor on the Brain
 
+void Dejam(int time){
+   IL.spin(forward, 80, pct);
+   wait (time, msec);
+   IL.spin(reverse, 80, pct);
+   wait (time, msec);
+
+}
 
 
-
-
+void basketchecker(double curr, bool checkeron) {
+  if (curr <= 2.5) {
+    Dejam(100);
+  }
+  else if (curr > 2.5) {IL.spin(forward, 80, pct);}
+}
 
 
 
@@ -200,6 +211,15 @@ Brain.Screen.printAt(300, YOFFSET + 211, "IL2");
  Brain.Screen.printAt(5, YOFFSET + 211, "Il2 Problem");
 }
 }
+
+
+void basketmotorcheck (bool checkeron) {
+  if (IL.installed()) {
+    double ILCurr = IL.current(amp);
+    basketchecker(ILCurr, checkeron);
+  }
+}
+
 
 
 void driveTank(int Lspeed,int Rspeed, int wt){
@@ -406,25 +426,39 @@ void pre_auton(void) {
 void autonomous(void) {
   // ..........................................................................
  // Insert autonomous user code here.
- inchdrive(6);
+ inchdrive(7);
  sidedrive(-3);
  wait(100, msec);
  Intake(80, 1);
  wait(100, msec);
  inchdrive(9);
  inchdrive(9);
- inchdrive(5.5);
+ inchdrive(5);
  wait(500, msec);
- gyroturn(45);
- sidedrive(5.2);
- inchdrive(7.2);
+ gyroturn(15.5);
  wait(100, msec);
- IL.spin(forward, 32, pct);
-     IR.spin(reverse, 100, pct);
-     IR2.spin(forward, 30, pct);
-     wait(10, sec);
-     inchdrive(-8);
-     gyroturn(-135);
+ gyroturn(15.5);
+ wait(100, msec);
+ gyroturn(7.5);
+ //sidedrive(1);
+ inchdrive(4.25);
+sidedrive(4.5);
+
+ wait(100, msec);
+ Ibrake();
+ Dejam(250);
+ wait(100, msec);
+ Dejam(250);
+inchdrive(3);
+   /* Middlescore function 
+     IL.spin(forward, 65, pct);
+     IR.spin(reverse, 75, pct);
+     IR2.spin(forward, 65, pct);*/
+Middlescore(65, 10);
+ inchdrive(2.5);
+ wait(300, msec);
+Dejam(250);
+Middlescore(65, 10);
  /*inchdrive(-10);
  sid
  inchdrive(4.25);
@@ -432,6 +466,7 @@ void autonomous(void) {
  sidedrive(1);
  inchdrive(2.75);
  Topscore(100, 1);*/
+
 
 
    // ..........................................................................
@@ -453,46 +488,54 @@ void usercontrol(void) {
   Brain.resetTimer();
   int Ispeed = 80;
   bool vexc = false;
+  bool checkeron = false;
  // User control code here, inside the loop
  //int T = 0;
  while (1) {
    Display();
    colorsensor(vexc);
+   basketmotorcheck(checkeron);
    wait (1, msec);
      
    if( Controller1.ButtonA.pressing()) {
     colorintake(Ispeed);
     vexc = true;
+    checkeron = false;
    }
    else if( Controller1.ButtonB.pressing()) {
-      IL.spin(reverse, Ispeed, pct);
+      //IL.spin(reverse, Ispeed, pct);
       IR.spin(forward, Ispeed, pct);
       wait(100, msec);
       IL.spin(forward, Ispeed, pct);
       IR.spin(forward, Ispeed, pct);
       vexc = false;
+      checkeron = true;
+      
+
    }
    else if( Controller1.ButtonY.pressing()) {
-     IL.spin(reverse, Ispeed, pct);
+    // IL.spin(reverse, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
      wait(100, msec);
-     IL.spin(forward, Ispeed, pct);
+    // IL.spin(forward, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
      vexc = false;
+     checkeron = true;
    }
    else if(Controller1.ButtonX.pressing()) {
-     IL.spin(reverse, Ispeed, pct);
-     IR.spin(reverse, Ispeed, pct);
-     IL2.spin(forward, 70, pct);
-     IR2.spin(reverse, 75, pct);
+     //IL.spin(reverse, 85, pct);
+     IR.spin(reverse, 85, pct);
+     IL2.spin(forward, 75, pct);
+     IR2.spin(reverse, Ispeed, pct);
      wait(100, msec);
-     IL.spin(forward, Ispeed, pct);
-     IR.spin(reverse, Ispeed, pct);
-     IL2.spin(forward, 70, pct);
-     IR2.spin(reverse, 75, pct);
+     //IL.spin(forward, 85, pct);
+     IR.spin(reverse, 85, pct);
+     IL2.spin(forward, 75, pct);
+     IR2.spin(reverse, Ispeed, pct);
      vexc = false;
+     checkeron = true;
    }
    else if(Controller1.ButtonLeft.pressing()) {
      IL.stop(brake);

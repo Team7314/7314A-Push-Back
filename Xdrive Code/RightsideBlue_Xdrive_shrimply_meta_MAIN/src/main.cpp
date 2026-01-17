@@ -405,8 +405,8 @@ void pre_auton(void) {
 void autonomous(void) {
   // ..........................................................................
  // Insert autonomous user code here.
- inchdrive(6);
- /*sidedrive(3);
+ inchdrive(7);
+ sidedrive(4);
  wait(100, msec);
  Intake(80, 1);
  wait(100, msec);
@@ -414,11 +414,17 @@ void autonomous(void) {
  inchdrive(9);
  inchdrive(5);
  wait(500, msec);
- gyroturn(-45);
- sidedrive(-2.5);
- inchdrive(7.75);
+ gyroturn(-22.5);
  wait(100, msec);
- Bottomscore(65, 1);*/
+ gyroturn(-22.5);
+ sidedrive(-2);
+ inchdrive(7);
+ wait(100, msec);
+ Bottomscore(65, 1);
+ /*wait(100, msec);
+ inchdrive(-2);
+ inchdrive(2);
+ sidedrive(3);
  /*inchdrive(-10);
  sidedrive(-15.5);
  inchdrive(4.25);
