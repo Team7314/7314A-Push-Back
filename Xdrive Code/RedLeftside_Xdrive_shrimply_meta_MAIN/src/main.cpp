@@ -630,20 +630,21 @@ driveForwardInches(2, -FORWARD_SPEED);   // go backward 2"
   wait(1.5, sec);
   driveForwardInches(5, -FORWARD_SPEED);   // go backward 5"
   Armup();
+  Dejam(10);
   turnToAngle(0, TURN_SPEED);
   driveForwardInches(18, FORWARD_SPEED);   // go forward 20"
-  strafeRightInches(2, FORWARD_SPEED);    // strafe right 2"
+  strafeRightInches(0.2, FORWARD_SPEED);    // strafe right 2"
   driveForwardInches(4, FORWARD_SPEED);   // go forward 2"
   Topscore(SCORING_SPEED * 2, 0);    // score top
-  wait(3, sec);
+  wait(2, sec);
   Dejam(100);
   wait(500, msec);
   Topscore(SCORING_SPEED * 2, 0);
-  wait(3, sec);
+  wait(2, sec);
   Dejam(100);
   wait(500, msec);
   Topscore(SCORING_SPEED * 2, 0);
-  wait(3, sec);
+  wait(2, sec);
   Ibrake();
 }
 
@@ -690,9 +691,9 @@ void autonParking2() {
 
 void autonomous(void) {
   
-  //firstScoringCycle();
+  firstScoringCycle();
    secondScoringCycle();
-  //autonParking2();
+  autonParking2();
  }
 
 
