@@ -34,7 +34,7 @@ optical THESENSOR (PORT11);
 int value =  THESENSOR.hue();
 const int RED_VAL = 20;
 const int BLUE_VAL1 = 120;
-const int BLUE_VAL2 = 210;
+const int BLUE_VAL2 = 230;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
@@ -76,12 +76,12 @@ void Dejam(int time){
 }
 
 
-void basketchecker(double curr, bool checkeron) {
+/*void basketchecker(double curr, bool checkeron) {
   if (curr <= 2.5) {
     Dejam(100);
   }
   else if (curr > 2.5) {IL.spin(forward, 80, pct);}
-}
+}*/
 
 
 
@@ -213,12 +213,12 @@ Brain.Screen.printAt(300, YOFFSET + 211, "IL2");
 }
 
 
-void basketmotorcheck (bool checkeron) {
+/*void basketmotorcheck (bool checkeron) {
   if (IL.installed()) {
     double ILCurr = IL.current(amp);
     basketchecker(ILCurr, checkeron);
   }
-}
+}*/
 
 
 
@@ -421,51 +421,192 @@ void pre_auton(void) {
 /*                                                                           */
 /*  You must modify the code to add your own robot specific commands here.   */
 /*---------------------------------------------------------------------------*/
+// ----- SIMPLE CONSTANTS STUDENTS CAN TUNE -----
+const double WHEEL_DIAM = 3.25;         // wheel size in inches
+const double PI_VAL     = 3.14159;
+const double GYRO_KP    = 2.0;          // heading correction gain
+const double DEGREES_PER_INCH = 27.0;  // wheel circumference
 
+double degreesPerInch() {
+  return DEGREES_PER_INCH;
+}
+
+// Drive straight using all 4 motors + gyro heading correction
+void driveForwardInches(double inches, int speedPct) {
+  // reset encoders
+  LF.resetPosition();
+  RF.resetPosition();
+  LB.resetPosition();
+  RB.resetPosition();
+
+  double targetDeg = inches * degreesPerInch();
+
+  // starting heading
+  double startAngle = gyroT.heading();
+
+  while (true) {
+    // average of all 4 wheels
+    double avgPos = (LF.position(degrees) +
+                     RF.position(degrees) +
+                     LB.position(degrees) +
+                     RB.position(degrees)) / 4.0;
+
+    if (fabs(avgPos) >= fabs(targetDeg)) {
+      break;
+    }
+
+    // gyro correction
+    double currentAngle = gyroT.heading();
+    double error = startAngle - currentAngle;
+
+    if (error > 180)  error -= 360;
+    if (error < -180) error += 360;
+
+    double correction = error * GYRO_KP;
+
+    double leftPower  = speedPct + correction;
+    double rightPower = speedPct - correction;
+
+    // clamp power to [-100, 100]
+    if (leftPower  > 100) leftPower  = 100;
+    if (leftPower  < -100) leftPower = -100;
+    if (rightPower > 100) rightPower = 100;
+    if (rightPower < -100) rightPower = -100;
+
+    // tank-style straight drive
+    LF.spin(forward, leftPower,  pct);
+    LB.spin(forward, leftPower,  pct);
+    RF.spin(forward, rightPower, pct);
+    RB.spin(forward, rightPower, pct);
+
+    wait(20, msec);
+  }
+
+  drivebrake();
+}
+
+void backToWallSlow() {
+  LF.spin(reverse, 20, pct);
+  LB.spin(reverse, 20, pct);
+  RF.spin(reverse, 20, pct);
+  RB.spin(reverse, 20, pct);
+  wait(700, msec);    // drive slowly back ~0.7s
+  drivebrake();
+}
+
+// Turn to absolute angle using gyroT and your existing driveTank
+void turnToAngle(double targetAngle, int baseSpeedPct) {
+  double accuracy = 2.0;   // degrees
+  double kP       = 1.2;   // simple P
+
+  while (true) {
+    double current = gyroT.rotation(deg);
+    double error   = targetAngle - current;
+
+    if (error > 180)  error -= 360;
+    if (error < -180) error += 360;
+
+    if (fabs(error) < accuracy) {
+      break;
+    }
+
+    double speed = kP * error;
+
+    // limit speed
+    if (speed >  baseSpeedPct)  speed =  baseSpeedPct;
+    if (speed < -baseSpeedPct)  speed = -baseSpeedPct;
+
+    driveTank(speed, -speed, 10);
+  }
+
+  drivebrake();
+}
+
+// X-drive strafe using LF/LB/RF/RB + gyro correction to keep heading
+void strafeRightInches(double inches, int speedPct) {
+  // reset encoders
+  LF.resetPosition();
+  RF.resetPosition();
+  LB.resetPosition();
+  RB.resetPosition();
+
+  double targetDeg = inches * degreesPerInch();
+
+  double startAngle = gyroT.heading();
+
+  while (true) {
+    // for strafing, use LF and RB (they move same direction)
+    double avgPos = (LF.position(degrees) + RB.position(degrees)) / 2.0;
+
+    if (fabs(avgPos) >= fabs(targetDeg)) {
+      break;
+    }
+
+    double currentAngle = gyroT.heading();
+    double error = startAngle - currentAngle;
+    if (error > 180)  error -= 360;
+    if (error < -180) error += 360;
+
+    double correction = error * GYRO_KP;
+
+    double flPower =  speedPct + correction;
+    double frPower = -speedPct - correction;
+    double lbPower = -speedPct + correction;
+    double rbPower =  speedPct - correction;
+
+    // clamp
+    auto clamp = [](double v) {
+      if (v > 100) return 100.0;
+      if (v < -100) return -100.0;
+      return v;
+    };
+
+    flPower = clamp(flPower);
+    frPower = clamp(frPower);
+    lbPower = clamp(lbPower);
+    rbPower = clamp(rbPower);
+
+    // X-drive strafe pattern
+    LF.spin(forward, flPower, pct);
+    RF.spin(forward, frPower, pct);
+    LB.spin(forward, lbPower, pct);
+    RB.spin(forward, rbPower, pct);
+
+    wait(20, msec);
+  }
+
+  drivebrake();
+}
 
 void autonomous(void) {
   // ..........................................................................
  // Insert autonomous user code here.
- inchdrive(7);
- sidedrive(-3);
- wait(100, msec);
- Intake(80, 1);
- wait(100, msec);
- inchdrive(9);
- inchdrive(9);
- inchdrive(5);
- wait(500, msec);
- gyroturn(15.5);
- wait(100, msec);
- gyroturn(15.5);
- wait(100, msec);
- gyroturn(7.5);
- //sidedrive(1);
- inchdrive(4.25);
-sidedrive(4.5);
+// gyroturn(360);
+  // backToWallSlow();
+  // wait(300, msec);
+  const int FOWARD_SPEED = 18;
+  const int TURN_SPEED = 20;
+  const int SCORING_SPEED = 45;
+  driveForwardInches(12, FOWARD_SPEED);   // go forward 12"
+  wait(300, msec);
+  turnToAngle(-45, TURN_SPEED);         // turn right 90 degrees
+  wait(300, msec);
+  Intake(80, 0);
+  driveForwardInches(17.5, FOWARD_SPEED);   // go forward 15.5"
+  wait(300, msec);
+  turnToAngle(45, TURN_SPEED);         // turn right 90 degrees
+  wait(300, msec);
+  driveForwardInches(10, FOWARD_SPEED);   // go forward 11"
+  wait(300, msec);
+  Middlescore(SCORING_SPEED, 0);        // score middle
+  wait(3, sec);
+  Dejam(100);
+  wait(500, msec);
+  Middlescore(SCORING_SPEED, 0);
 
- wait(100, msec);
- Ibrake();
- Dejam(250);
- wait(100, msec);
- Dejam(250);
-inchdrive(3);
-   /* Middlescore function 
-     IL.spin(forward, 65, pct);
-     IR.spin(reverse, 75, pct);
-     IR2.spin(forward, 65, pct);*/
-Middlescore(65, 10);
- inchdrive(2.5);
- wait(300, msec);
-Dejam(250);
-Middlescore(65, 10);
- /*inchdrive(-10);
- sid
- inchdrive(4.25);
- inchdrive(-2);
- sidedrive(1);
- inchdrive(2.75);
- Topscore(100, 1);*/
+  // strafeRightInches(12, 50);    // strafe right 12"
+  // wait(300, msec); 
+
 
 
 
@@ -486,6 +627,7 @@ Middlescore(65, 10);
 
 void usercontrol(void) {
   Brain.resetTimer();
+  THESENSOR.setLight(ledState::on);
   int Ispeed = 80;
   bool vexc = false;
   bool checkeron = false;
@@ -494,7 +636,7 @@ void usercontrol(void) {
  while (1) {
    Display();
    colorsensor(vexc);
-   basketmotorcheck(checkeron);
+   //basketmotorcheck(checkeron);
    wait (1, msec);
      
    if( Controller1.ButtonA.pressing()) {
@@ -503,7 +645,7 @@ void usercontrol(void) {
     checkeron = false;
    }
    else if( Controller1.ButtonB.pressing()) {
-      //IL.spin(reverse, Ispeed, pct);
+      IL.spin(reverse, Ispeed, pct);
       IR.spin(forward, Ispeed, pct);
       wait(100, msec);
       IL.spin(forward, Ispeed, pct);
@@ -514,23 +656,23 @@ void usercontrol(void) {
 
    }
    else if( Controller1.ButtonY.pressing()) {
-    // IL.spin(reverse, Ispeed, pct);
+     IL.spin(reverse, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
      wait(100, msec);
-    // IL.spin(forward, Ispeed, pct);
+     IL.spin(forward, Ispeed, pct);
      IR.spin(reverse, Ispeed, pct);
      IR2.spin(forward, 75, pct);
      vexc = false;
      checkeron = true;
    }
    else if(Controller1.ButtonX.pressing()) {
-     //IL.spin(reverse, 85, pct);
+     IL.spin(reverse, 85, pct);
      IR.spin(reverse, 85, pct);
      IL2.spin(forward, 75, pct);
      IR2.spin(reverse, Ispeed, pct);
      wait(100, msec);
-     //IL.spin(forward, 85, pct);
+     IL.spin(forward, 85, pct);
      IR.spin(reverse, 85, pct);
      IL2.spin(forward, 75, pct);
      IR2.spin(reverse, Ispeed, pct);

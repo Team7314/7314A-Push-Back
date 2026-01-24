@@ -40,7 +40,7 @@ const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
 void colorsensor(bool vexc) {
   const int RED_VAL = 20;
 const int BLUE_VAL1 = 120;
-const int BLUE_VAL2 = 210;
+const int BLUE_VAL2 = 230;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
@@ -409,28 +409,9 @@ void pre_auton(void) {
 
 void autonomous(void) {
   // ..........................................................................
+  
  // Insert autonomous user code here.
- inchdrive(7);
- sidedrive(4);
- wait(100, msec);
- Intake(80, 1);
- wait(100, msec);
- inchdrive(9);
- inchdrive(9);
  inchdrive(5);
- wait(500, msec);
- gyroturn(-45);
- sidedrive(-2);
- inchdrive(7);
- wait(100, msec);
- Bottomscore(65, 1);
- /*inchdrive(-10);
- sidedrive(-15.5);
- inchdrive(4.25);
- inchdrive(-2);
- sidedrive(1);
- inchdrive(2.75);
- Topscore(100, 1);*/
 
 
    // ..........................................................................
@@ -450,6 +431,7 @@ void autonomous(void) {
 
 void usercontrol(void) {
   Brain.resetTimer();
+  THESENSOR.setLight(ledState::on);
   int Ispeed = 80;
   bool vexc = false;
  // User control code here, inside the loop

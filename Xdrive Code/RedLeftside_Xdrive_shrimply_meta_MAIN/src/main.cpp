@@ -34,7 +34,7 @@ optical THESENSOR (PORT11);
 int value =  THESENSOR.hue();
 const int RED_VAL = 20;
 const int BLUE_VAL1 = 120;
-const int BLUE_VAL2 = 210;
+const int BLUE_VAL2 = 230;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
@@ -353,6 +353,9 @@ void Ibrake(){
 void Armup(){
  Deloader.set(false);
 }
+void Armdown(){
+ Deloader.set(true);
+}
 void Dejam(int time){
    IL.spin(forward, 80, pct);
    wait (time, msec);
@@ -404,6 +407,13 @@ const double WHEEL_DIAM = 3.25;         // wheel size in inches
 const double PI_VAL     = 3.14159;
 const double GYRO_KP    = 2.0;          // heading correction gain
 const double DEGREES_PER_INCH = 27.0;  // wheel circumference
+
+// -----------------------------------------------
+// --------------- AUTON PARAMS ------------------
+// -----------------------------------------------
+  const int FORWARD_SPEED = 18;
+  const int TURN_SPEED = 20;
+  const int SCORING_SPEED = 45;
 
 double degreesPerInch() {
   return DEGREES_PER_INCH;
@@ -556,34 +566,135 @@ void strafeRightInches(double inches, int speedPct) {
   drivebrake();
 }
 
-void autonomous(void) {
-  // ..........................................................................
- // Insert autonomous user code here.
-// gyroturn(360);
-  // backToWallSlow();
-  // wait(300, msec);
-  const int FOWARD_SPEED = 18;
-  const int TURN_SPEED = 20;
-  const int SCORING_SPEED = 75;
-  driveForwardInches(12, FOWARD_SPEED);   // go forward 24"
+
+void firstScoringCycle() {
+// First scoring cycle
+  ////////////////////////////////////////////////////////////////////////
+ driveForwardInches(12, FORWARD_SPEED);   // go forward 12"
   wait(300, msec);
   turnToAngle(-45, TURN_SPEED);         // turn right 90 degrees
   wait(300, msec);
   Intake(80, 0);
-  driveForwardInches(15.5, FOWARD_SPEED);   // go forward 24"
+  driveForwardInches(17.5, FORWARD_SPEED);   // go forward 15.5"
   wait(300, msec);
-  turnToAngle(45, TURN_SPEED);         // turn right 90 degrees
-  wait(300, msec);
-  driveForwardInches(12, FOWARD_SPEED);   // go forward 24"
-  wait(300, msec);
-  Middlescore(SCORING_SPEED, 0);        // score middle
-  // wait(500, msec);
-  // Ibrake();
+  driveForwardInches(4, -FORWARD_SPEED);   // go backward 15.5"
+  turnToAngle(90, TURN_SPEED);     
+  driveForwardInches(26, FORWARD_SPEED * 2);    // go forward 52"
+  turnToAngle(45, TURN_SPEED);
+  strafeRightInches(8, FORWARD_SPEED);    // strafe right 5"
+  driveForwardInches(25, FORWARD_SPEED);   // go forward 17"
+  driveForwardInches(5, -FORWARD_SPEED);   // go backward 3"
+  strafeRightInches(28, FORWARD_SPEED);    // strafe right 7"
+  turnToAngle(0, TURN_SPEED);
+  strafeRightInches(0.25, FORWARD_SPEED);    // strafe right 2"
+  driveForwardInches(10, FORWARD_SPEED);   // go forward 10"
+ Topscore(SCORING_SPEED * 2, 0);    // score top
+  wait(3, sec);
+  Dejam(100);
+  wait(1, sec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(3, sec);
+  Dejam(100);
+  wait(1, sec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(3, sec);
+  Dejam(100);
+  wait(1, sec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(3, sec);
+  Ibrake();
+    ////////////////////////////////////////////////////////////////////////
+}
 
-  // strafeRightInches(12, 50);    // strafe right 12"
-  // wait(300, msec);
+void secondScoringCycle() {
+    // Deloading cycle
+  ////////////////////////////////////////////////////////////////////////
+  driveForwardInches(5, -FORWARD_SPEED);   // go backward 5"
+  turnToAngle(180, TURN_SPEED*2);
+  Armdown();
+  Intake(80, 0);
+  wait(150, msec);
+  driveForwardInches(12, 40);   // go forward 18"
+  wait(100, msec);
+  driveForwardInches(12, 100);   // go backward 2
+  wait(300, msec);
+  driveForwardInches(2, -FORWARD_SPEED);   // go backward 2"
+  driveForwardInches(2, FORWARD_SPEED);   // go forward 2"
+  wait(100, msec);
+driveForwardInches(2, -FORWARD_SPEED);   // go backward 2"
+  driveForwardInches(2, FORWARD_SPEED);   // go forward 2"
+  wait(100, msec);
+  driveForwardInches(2, -FORWARD_SPEED);   // go backward 2"
+  driveForwardInches(2, FORWARD_SPEED);   // go forward 2"
+  wait(100, msec);
+  driveForwardInches(2, -FORWARD_SPEED);   // go backward 2"
+  driveForwardInches(2, FORWARD_SPEED);   // go forward 2"
+  wait(1.5, sec);
+  driveForwardInches(5, -FORWARD_SPEED);   // go backward 5"
+  Armup();
+  turnToAngle(0, TURN_SPEED);
+  driveForwardInches(18, FORWARD_SPEED);   // go forward 20"
+  strafeRightInches(2, FORWARD_SPEED);    // strafe right 2"
+  driveForwardInches(4, FORWARD_SPEED);   // go forward 2"
+  Topscore(SCORING_SPEED * 2, 0);    // score top
+  wait(3, sec);
+  Dejam(100);
+  wait(500, msec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(3, sec);
+  Dejam(100);
+  wait(500, msec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(3, sec);
+  Ibrake();
+}
 
-   // ..........................................................................
+void incrementalForwardSpeed(int targetSpeed, int acceleration_step, int speed_step) {
+  for(int speed = 0; speed <= targetSpeed; speed += speed_step) {
+    Xdrive(speed, speed, speed, speed, acceleration_step);
+  }
+}
+
+void autonParking() {
+  driveForwardInches(10, -FORWARD_SPEED);   // go backward 10"
+  turnToAngle(-90, TURN_SPEED);
+  driveForwardInches(16, FORWARD_SPEED);   // go forward 16"
+  strafeRightInches(21, -FORWARD_SPEED);    // strafe right 25"
+
+  // Accelerated forward to park
+  const int MAX_SUPER_SPEED = 200;
+  const int SPEED_STEP = 5;
+  const int ACCELERATION_STEP = 2; // milliseconds between speed increments
+  incrementalForwardSpeed(MAX_SUPER_SPEED, ACCELERATION_STEP, SPEED_STEP);
+
+}
+
+void autonParking2() {
+ driveForwardInches(10, -FORWARD_SPEED * 2);   // go backward 10"
+  strafeRightInches(28, -FORWARD_SPEED * 2);    // strafe left 14"
+  turnToAngle(-135, TURN_SPEED);
+  Intake(80, 0);
+  wait(300, msec);
+
+    // Accelerated forward to park
+  const int MAX_SUPER_SPEED = 200;
+  const int SPEED_STEP = 5;
+  const int ACCELERATION_STEP = 2; // milliseconds between speed increments
+  incrementalForwardSpeed(MAX_SUPER_SPEED, ACCELERATION_STEP, SPEED_STEP);
+
+  // driveForwardInches(20, -FORWARD_SPEED);   // go backward 20"
+  // Xdrive(200, 200, 200, 200, 100); //go forward FAST
+  // Intake(80, 0);
+  // wait(10, sec);
+  // drivebrake();
+}
+
+
+void autonomous(void) {
+  
+  firstScoringCycle();
+   secondScoringCycle();
+  autonParking2();
  }
 
 
@@ -600,6 +711,7 @@ void autonomous(void) {
 
 void usercontrol(void) {
   Brain.resetTimer();
+  THESENSOR.setLight(ledState::on);
   int Ispeed = 80;
   bool vexc = false;
  // User control code here, inside the loop

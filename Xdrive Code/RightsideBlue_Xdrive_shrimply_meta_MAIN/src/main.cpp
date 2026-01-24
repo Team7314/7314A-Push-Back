@@ -34,7 +34,7 @@ digital_out Descorer = digital_out(Brain.ThreeWirePort.B);
 int value =  THESENSOR.hue();
 const int RED_VAL = 20;
 const int BLUE_VAL1 = 120;
-const int BLUE_VAL2 = 210;
+const int BLUE_VAL2 = 230;
 const int MOTOR_SPEED = 80;
 const int SPIN_CLOCKWISE = -1 * MOTOR_SPEED;
 const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
@@ -451,6 +451,7 @@ void autonomous(void) {
 
 void usercontrol(void) {
   Brain.resetTimer();
+  THESENSOR.setLight(ledState::on);
   int Ispeed = 80;
   bool vexc = false;
  // User control code here, inside the loop
