@@ -396,6 +396,15 @@ IR.spin(reverse, Ispeed, pct);
 }
 */
 
+
+void Intake(int Ispeed, int wt) {
+IR.spin(reverse, Ispeed, pct);
+  IL.stop(brake);
+  IR2.spin(reverse, 100, pct);
+  IL2.spin(reverse, Ispeed, pct);
+}
+
+
 void colorintake(int Ispeed) {
   IR.spin(reverse, Ispeed, pct);
   IL.stop(brake);
@@ -449,7 +458,17 @@ void Armup(){
  Deloader.set(false);
 }
 
+void Armdown(){
+ Deloader.set(true);
+}
 
+void Dejam(int time){
+   IL.spin(forward, 80, pct);
+   wait (time, msec);
+   IL.spin(reverse, 80, pct);
+   wait (time, msec);
+
+}
 
 
 // define your global instances of motors and other devices here
@@ -501,7 +520,294 @@ void pre_auton(void) {
 /*---------------------------------------------------------------------------*/
 
 
+const double WHEEL_DIAM = 3.25;         // wheel size in inches
+const double PI_VAL     = 3.14159;
+const double GYRO_KP    = 2.0;          // heading correction gain
+const double DEGREES_PER_INCH = 27.0;  // wheel circumference
 
+// -----------------------------------------------
+// --------------- AUTON PARAMS ------------------
+// -----------------------------------------------
+  const int FORWARD_SPEED = 30;
+  const int TURN_SPEED = 30;
+  const int SCORING_SPEED = 45;
+  const int WAIT_BETWEEN_ACTIONS = 100;  // in milliseconds
+
+double degreesPerInch() {
+  return DEGREES_PER_INCH;
+}
+
+// Drive straight using all 4 motors + gyro heading correction
+void driveForwardInches(double inches, int speedPct) {
+  // reset encoders
+  LF.resetPosition();
+  RF.resetPosition();
+  LB.resetPosition();
+  RB.resetPosition();
+
+  double targetDeg = inches * degreesPerInch();
+
+  // starting heading
+  double startAngle = gyroT.heading();
+
+  while (true) {
+    // average of all 4 wheels
+    double avgPos = (LF.position(degrees) +
+                     RF.position(degrees) +
+                     LB.position(degrees) +
+                     RB.position(degrees)) / 4.0;
+
+    if (fabs(avgPos) >= fabs(targetDeg)) {
+      break;
+    }
+
+    // gyro correction
+    double currentAngle = gyroT.heading();
+    double error = startAngle - currentAngle;
+
+    if (error > 180)  error -= 360;
+    if (error < -180) error += 360;
+
+    double correction = error * GYRO_KP;
+
+    double leftPower  = speedPct + correction;
+    double rightPower = speedPct - correction;
+
+    // clamp power to [-100, 100]
+    if (leftPower  > 100) leftPower  = 100;
+    if (leftPower  < -100) leftPower = -100;
+    if (rightPower > 100) rightPower = 100;
+    if (rightPower < -100) rightPower = -100;
+
+    // tank-style straight drive
+    LF.spin(forward, leftPower,  pct);
+    LB.spin(forward, leftPower,  pct);
+    RF.spin(forward, rightPower, pct);
+    RB.spin(forward, rightPower, pct);
+
+    wait(20, msec);
+  }
+
+  drivebrake();
+  wait(WAIT_BETWEEN_ACTIONS, msec);
+}
+
+void backToWallSlow() {
+  LF.spin(reverse, 20, pct);
+  LB.spin(reverse, 20, pct);
+  RF.spin(reverse, 20, pct);
+  RB.spin(reverse, 20, pct);
+  wait(700, msec);    // drive slowly back ~0.7s
+  drivebrake();
+}
+
+// Turn to absolute angle using gyroT and your existing driveTank
+void turnToAngle(double targetAngle, int baseSpeedPct) {
+  double accuracy = 2.0;   // degrees
+  double kP       = 1.2;   // simple P
+
+  while (true) {
+    double current = gyroT.rotation(deg);
+    double error   = targetAngle - current;
+
+    if (error > 180)  error -= 360;
+    if (error < -180) error += 360;
+
+    if (fabs(error) < accuracy) {
+      break;
+    }
+
+    double speed = kP * error;
+
+    // limit speed
+    if (speed >  baseSpeedPct)  speed =  baseSpeedPct;
+    if (speed < -baseSpeedPct)  speed = -baseSpeedPct;
+
+    driveTank(speed, -speed, 10);
+  }
+
+  drivebrake();
+  wait(WAIT_BETWEEN_ACTIONS, msec);
+}
+
+// X-drive strafe using LF/LB/RF/RB + gyro correction to keep heading
+void strafeRightInches(double inches, int speedPct) {
+  // reset encoders
+  LF.resetPosition();
+  RF.resetPosition();
+  LB.resetPosition();
+  RB.resetPosition();
+
+  double targetDeg = inches * degreesPerInch();
+
+  double startAngle = gyroT.heading();
+
+  while (true) {
+    // for strafing, use LF and RB (they move same direction)
+    double avgPos = (LF.position(degrees) + RB.position(degrees)) / 2.0;
+
+    if (fabs(avgPos) >= fabs(targetDeg)) {
+      break;
+    }
+
+    double currentAngle = gyroT.heading();
+    double error = startAngle - currentAngle;
+    if (error > 180)  error -= 360;
+    if (error < -180) error += 360;
+
+    double correction = error * GYRO_KP;
+
+    double flPower =  speedPct + correction;
+    double frPower = -speedPct - correction;
+    double lbPower = -speedPct + correction;
+    double rbPower =  speedPct - correction;
+
+    // clamp
+    auto clamp = [](double v) {
+      if (v > 100) return 100.0;
+      if (v < -100) return -100.0;
+      return v;
+    };
+
+    flPower = clamp(flPower);
+    frPower = clamp(frPower);
+    lbPower = clamp(lbPower);
+    rbPower = clamp(rbPower);
+
+    // X-drive strafe pattern
+    LF.spin(forward, flPower, pct);
+    RF.spin(forward, frPower, pct);
+    LB.spin(forward, lbPower, pct);
+    RB.spin(forward, rbPower, pct);
+
+    wait(20, msec);
+  }
+
+  drivebrake();
+  wait(WAIT_BETWEEN_ACTIONS, msec);
+}
+
+
+void firstScoringCycle() {
+// First scoring cycle
+  ////////////////////////////////////////////////////////////////////////
+ driveForwardInches(12, FORWARD_SPEED);   // go forward 12"
+  turnToAngle(-45, TURN_SPEED);         // turn right 90 degrees
+  Intake(80, 0);
+  driveForwardInches(17.5, FORWARD_SPEED * 0.5);   // go forward 15.5"
+  driveForwardInches(4, -FORWARD_SPEED);   // go backward 15.5"
+  turnToAngle(45, TURN_SPEED);     
+  //drive across field
+  driveForwardInches(26, FORWARD_SPEED * 2);    // go forward 52"
+  turnToAngle(45, TURN_SPEED);
+  strafeRightInches(11, FORWARD_SPEED);    // strafe right 5"
+  driveForwardInches(25, FORWARD_SPEED * 0.5);   // go forward 17"
+  driveForwardInches(5, -FORWARD_SPEED);   // go backward 5"
+  Dejam(100);
+  strafeRightInches(30, FORWARD_SPEED);    // strafe right 29"
+  turnToAngle(0, TURN_SPEED);
+   //strafeRightInches(2, FORWARD_SPEED);    // strafe right 2"
+  driveForwardInches(15, FORWARD_SPEED);   // go forward 10"
+  RB.spin(forward, 30, pct);
+  wait(200, msec);
+  drivebrake();
+ Topscore(SCORING_SPEED * 2, 0);    // score top
+  wait(2, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(2, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(2, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(2, sec);
+  Ibrake();
+    ////////////////////////////////////////////////////////////////////////
+}
+
+void secondScoringCycle() {
+    // Deloading cycle
+  ////////////////////////////////////////////////////////////////////////
+  driveForwardInches(5, -FORWARD_SPEED);   // go backward 5"
+  turnToAngle(180, TURN_SPEED*2);
+  Armdown();
+  Intake(80, 0);
+  wait(150, msec);
+  driveForwardInches(12, 40);   // go forward 18"
+  driveForwardInches(12, 100);   // go backward 2
+  driveForwardInches(2, -FORWARD_SPEED);   // go backward 2"
+  driveForwardInches(2, FORWARD_SPEED);   // go forward 2"
+driveForwardInches(2, -FORWARD_SPEED);   // go backward 2"
+  driveForwardInches(2, FORWARD_SPEED);   // go forward 2"
+  driveForwardInches(2, -FORWARD_SPEED);   // go backward 2"
+  driveForwardInches(2, FORWARD_SPEED);   // go forward 2"
+  driveForwardInches(2, -FORWARD_SPEED);   // go backward 2"
+  driveForwardInches(2, FORWARD_SPEED);   // go forward 2"
+  wait(1.5, sec);
+  driveForwardInches(5, -FORWARD_SPEED);   // go backward 5"
+  Armup();
+  Dejam(10);
+  turnToAngle(0, TURN_SPEED);
+  driveForwardInches(18, FORWARD_SPEED);   // go forward 20"
+  strafeRightInches(0.2, FORWARD_SPEED);    // strafe right 2"
+  driveForwardInches(4, FORWARD_SPEED);   // go forward 2"
+  RB.spin(forward, 30, pct);
+  wait(200, msec);
+  drivebrake();
+  Topscore(SCORING_SPEED * 2, 0);    // score top
+  wait(2, sec);
+  Dejam(100);
+  wait(500, msec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(2, sec);
+  Dejam(100);
+  wait(500, msec);
+  Topscore(SCORING_SPEED * 2, 0);
+  wait(2, sec);
+}
+
+void incrementalForwardSpeed(int targetSpeed, int acceleration_step, int speed_step) {
+  for(int speed = 0; speed <= targetSpeed; speed += speed_step) {
+    Xdrive(speed, speed, speed, speed, acceleration_step);
+  }
+}
+
+void autonParking() {
+  driveForwardInches(10, -FORWARD_SPEED);   // go backward 10"
+  turnToAngle(-90, TURN_SPEED);
+  driveForwardInches(16, FORWARD_SPEED);   // go forward 16"
+  strafeRightInches(21, -FORWARD_SPEED);    // strafe right 25"
+
+  // Accelerated forward to park
+  const int MAX_SUPER_SPEED = 200;
+  const int SPEED_STEP = 5;
+  const int ACCELERATION_STEP = 2; // milliseconds between speed increments
+  incrementalForwardSpeed(MAX_SUPER_SPEED, ACCELERATION_STEP, SPEED_STEP);
+
+}
+
+void autonParking2() {
+ driveForwardInches(10, -FORWARD_SPEED * 2);   // go backward 10"
+  strafeRightInches(28, -FORWARD_SPEED * 2);    // strafe left 14"
+  turnToAngle(-135, TURN_SPEED * 1.5);
+  wait(100, msec);
+
+    // Accelerated forward to park
+  const int MAX_SUPER_SPEED = 200;
+  const int SPEED_STEP = 5;
+  const int ACCELERATION_STEP = 2; // milliseconds between speed increments
+  incrementalForwardSpeed(MAX_SUPER_SPEED, ACCELERATION_STEP, SPEED_STEP);
+
+  // driveForwardInches(20, -FORWARD_SPEED);   // go backward 20"
+  // Xdrive(200, 200, 200, 200, 100); //go forward FAST
+  // Intake(80, 0);
+  // wait(10, sec);
+  // drivebrake();
+}
 
 void autonomous(void) {
   // ..........................................................................
