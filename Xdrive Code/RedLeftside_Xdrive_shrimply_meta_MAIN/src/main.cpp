@@ -573,7 +573,7 @@ void strafeRightInches(double inches, int speedPct) {
 }
 
 
-void AutonScoringOne() {
+void RedLeftCenter() {
 // First scoring cycle
   ////////////////////////////////////////////////////////////////////////
  driveForwardInches(12, FORWARD_SPEED);   // go forward 12"
@@ -624,21 +624,21 @@ void AutonScoringOne() {
     ////////////////////////////////////////////////////////////////////////
 }
 
-void AutonScoringTwo() {
+void RedLeftLong() {
   driveForwardInches(12, FORWARD_SPEED);   // go forward 12"
   turnToAngle(-45, TURN_SPEED);         // turn right 90 degrees
   Intake(80, 0);
   driveForwardInches(17.5, FORWARD_SPEED * 0.5);   // go forward 15.5"
   Dejam(100);
   wait(0.5, sec);
-  strafeRightInches(32, -FORWARD_SPEED);    // strafe left 11"
+  strafeRightInches(32.65, -FORWARD_SPEED);    // strafe left 11"
   turnToAngle(0, TURN_SPEED);
-  driveForwardInches(10, FORWARD_SPEED);    // go forward 24"
-  Topscore(SCORING_SPEED*2, 0);    // score middle
+  driveForwardInches(9.95, FORWARD_SPEED);    // go forward 24"
+  Topscore(SCORING_SPEED*3, 0);    // score middle
   wait(1.5, sec);
   Dejam(100);
   wait(0.5, sec);
-  Topscore(SCORING_SPEED*2, 0);    // score middle
+  Topscore(SCORING_SPEED*3, 0);    // score middle
 }
 
 void secondScoringCycle() {
@@ -724,7 +724,7 @@ void autonParking2() {
 
 void autonomous(void) {
   
-  AutonScoringTwo();
+  RedLeftLong();
   //secondScoringCycle();
   //autonParking2();
  }

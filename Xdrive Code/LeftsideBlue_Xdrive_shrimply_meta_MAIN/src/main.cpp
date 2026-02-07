@@ -427,6 +427,14 @@ const double PI_VAL     = 3.14159;
 const double GYRO_KP    = 2.0;          // heading correction gain
 const double DEGREES_PER_INCH = 27.0;  // wheel circumference
 
+// -----------------------------------------------
+// --------------- AUTON PARAMS ------------------
+// -----------------------------------------------
+  const int FORWARD_SPEED = 30;
+  const int TURN_SPEED = 30;
+  const int SCORING_SPEED = 45;
+  const int WAIT_BETWEEN_ACTIONS = 100;  // in milliseconds
+
 double degreesPerInch() {
   return DEGREES_PER_INCH;
 }
@@ -483,6 +491,7 @@ void driveForwardInches(double inches, int speedPct) {
   }
 
   drivebrake();
+  wait(WAIT_BETWEEN_ACTIONS, msec);
 }
 
 void backToWallSlow() {
@@ -520,6 +529,7 @@ void turnToAngle(double targetAngle, int baseSpeedPct) {
   }
 
   drivebrake();
+  wait(WAIT_BETWEEN_ACTIONS, msec);
 }
 
 // X-drive strafe using LF/LB/RF/RB + gyro correction to keep heading
@@ -576,43 +586,56 @@ void strafeRightInches(double inches, int speedPct) {
   }
 
   drivebrake();
+  wait(WAIT_BETWEEN_ACTIONS, msec);
+}
+
+
+void BlueLeftCenter() {
+// First scoring cycle
+  ////////////////////////////////////////////////////////////////////////
+ driveForwardInches(12, FORWARD_SPEED);   // go forward 12"
+  turnToAngle(-45, TURN_SPEED);         // turn right 90 degrees
+  Intake(80, 0);
+  driveForwardInches(17.5, FORWARD_SPEED * 0.5);   // go forward 15.5"
+  driveForwardInches(1.75, -FORWARD_SPEED);   // go backward 15.5"
+  Dejam(100);
+  wait(0.5, sec);
+  turnToAngle(45, TURN_SPEED);     
+  driveForwardInches(14, FORWARD_SPEED);    // go forward 24"
+  Middlescore(SCORING_SPEED*1.5, 0);    // score middle
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Middlescore(SCORING_SPEED*1.5, 0);    // score middle
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Middlescore(SCORING_SPEED*1.5, 0);    // score middle
+
+    ////////////////////////////////////////////////////////////////////////
+}
+
+void BlueLeftLong() {
+  driveForwardInches(12, FORWARD_SPEED);   // go forward 12"
+  turnToAngle(-45, TURN_SPEED);         // turn right 90 degrees
+  Intake(80, 0);
+  driveForwardInches(17.5, FORWARD_SPEED * 0.5);   // go forward 15.5"
+  Dejam(100);
+  wait(0.5, sec);
+  strafeRightInches(31.85, -FORWARD_SPEED);    // strafe left 11"
+  turnToAngle(0, TURN_SPEED);
+  driveForwardInches(10.25, FORWARD_SPEED);    // go forward 24"
+  Topscore(SCORING_SPEED*3, 0);    // score middle
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Topscore(SCORING_SPEED*3, 0);    // score middle
 }
 
 void autonomous(void) {
-  // ..........................................................................
- // Insert autonomous user code here.
-// gyroturn(360);
-  // backToWallSlow();
-  // wait(300, msec);
-  const int FOWARD_SPEED = 18;
-  const int TURN_SPEED = 20;
-  const int SCORING_SPEED = 45;
-  driveForwardInches(12, FOWARD_SPEED);   // go forward 12"
-  wait(300, msec);
-  turnToAngle(-45, TURN_SPEED);         // turn right 90 degrees
-  wait(300, msec);
-  Intake(80, 0);
-  driveForwardInches(17.5, FOWARD_SPEED);   // go forward 15.5"
-  wait(300, msec);
-  turnToAngle(45, TURN_SPEED);         // turn right 90 degrees
-  wait(300, msec);
-  driveForwardInches(10, FOWARD_SPEED);   // go forward 11"
-  wait(300, msec);
-  Middlescore(SCORING_SPEED, 0);        // score middle
-  wait(3, sec);
-  Dejam(100);
-  wait(500, msec);
-  Middlescore(SCORING_SPEED, 0);
-
-  // strafeRightInches(12, 50);    // strafe right 12"
-  // wait(300, msec); 
-
-
-
-
-   // ..........................................................................
+  
+  BlueLeftCenter();
  }
-
 
 /*---------------------------------------------------------------------------*/
 /*                                                                           */
