@@ -35,6 +35,7 @@ motor IR2(PORT7, ratio6_1, true);
 motor IL2(PORT8, ratio6_1, false);
 digital_out Deloader = digital_out(Brain.ThreeWirePort.A);
 digital_out Descorer = digital_out(Brain.ThreeWirePort.B);
+digital_out sunroof = digital_out(Brain.ThreeWirePort.C);
 optical THESENSOR = optical (PORT11);
 
 int value =  THESENSOR.hue();
@@ -47,8 +48,8 @@ const int SPIN_COUNTER_CLOCKWISE = MOTOR_SPEED;
 
 // Enums define named options instead of using 0, 1, 2, etc.
 enum Color { RED, BLUE };
-enum Side { RIGHT, LEFT };
-enum Goal { CENTER, LONG };
+enum Side { RIGHT, LEFT, SIDE_BACK };
+enum Goal { CENTER, LONG, GOAL_BACK };
 
 // Global variable to store selected alliance color from auton selector
 Color selectedColor;
@@ -417,6 +418,18 @@ const int DEBOUNCE_TIME = 200;     // Milliseconds to wait after button press
 const int LOOP_DELAY = 20;         // Milliseconds between loop iterations
 const int DISPLAY_TIME = 2000;     // Milliseconds to display final selection
 
+// BACK Button constants
+const int BACK_BUTTON_X = 380;
+const int BACK_BUTTON_Y = 10;
+const int BACK_BUTTON_WIDTH = 90;
+const int BACK_BUTTON_HEIGHT = 40;
+
+// CONFIRM Button constants
+const int CONFIRM_BUTTON_X = 190;
+const int CONFIRM_BUTTON_Y = 200;
+const int CONFIRM_BUTTON_WIDTH = 100;
+const int CONFIRM_BUTTON_HEIGHT = 50;
+
 // =============================================================================
 // AUTONOMOUS SELECTION SYSTEM
 // =============================================================================
@@ -467,7 +480,7 @@ Color selectColor() {
   
   createButton(red, BUTTON_X, BUTTON_TOP_Y, BUTTON_WIDTH, BUTTON_HEIGHT, "RED");
   createButton(blue, BUTTON_X, BUTTON_BOTTOM_Y, BUTTON_WIDTH, BUTTON_HEIGHT, "BLUE");
-  
+
   while(true) {
     if(buttonPressed(BUTTON_X, BUTTON_TOP_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
       wait(DEBOUNCE_TIME, msec);
@@ -490,6 +503,7 @@ Side selectSide() {
   
   createButton(green, BUTTON_X, BUTTON_TOP_Y, BUTTON_WIDTH, BUTTON_HEIGHT, "RIGHT");
   createButton(orange, BUTTON_X, BUTTON_BOTTOM_Y, BUTTON_WIDTH, BUTTON_HEIGHT, "LEFT");
+  createButton(vex::color(100, 100, 100), BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, "BACK");
   
   while(true) {
     if(buttonPressed(BUTTON_X, BUTTON_TOP_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
@@ -499,6 +513,10 @@ Side selectSide() {
     if(buttonPressed(BUTTON_X, BUTTON_BOTTOM_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
       wait(DEBOUNCE_TIME, msec);
       return LEFT;
+    }
+    if(buttonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT)) {
+      wait(DEBOUNCE_TIME, msec);
+      return SIDE_BACK;
     }
     wait(LOOP_DELAY, msec);
   }
@@ -513,6 +531,7 @@ Goal selectGoal() {
   
   createButton(purple, BUTTON_X, BUTTON_TOP_Y, BUTTON_WIDTH, BUTTON_HEIGHT, "CENTER");
   createButton(yellow, BUTTON_X, BUTTON_BOTTOM_Y, BUTTON_WIDTH, BUTTON_HEIGHT, "LONG");
+  createButton(vex::color(100, 100, 100), BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, "BACK");
   
   while(true) {
     if(buttonPressed(BUTTON_X, BUTTON_TOP_Y, BUTTON_WIDTH, BUTTON_HEIGHT)) {
@@ -523,6 +542,10 @@ Goal selectGoal() {
       wait(DEBOUNCE_TIME, msec);
       return LONG;
     }
+    if(buttonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT)) {
+      wait(DEBOUNCE_TIME, msec);
+      return GOAL_BACK;
+    }
     wait(LOOP_DELAY, msec);
   }
 }
@@ -531,47 +554,102 @@ Goal selectGoal() {
 // MAIN SELECTOR FUNCTION: autonSelector
 // =============================================================================
 void autonSelector() {
-  // Step 1-3: Get user's three choices
-  Color color = selectColor();
-  Side side = selectSide();
-  Goal goal = selectGoal();
-  
-  // Store selected color globally for color sensor filtering during match
-  selectedColor = color;
-  
-  // Map the combination of choices to a specific autonomous routine
-  if(color == RED && side == RIGHT && goal == CENTER) autonToRun = RED_RIGHT_CENTER;
-  if(color == RED && side == RIGHT && goal == LONG) autonToRun = RED_RIGHT_LONG;
-  if(color == RED && side == LEFT && goal == CENTER) autonToRun = RED_LEFT_CENTER;
-  if(color == RED && side == LEFT && goal == LONG) autonToRun = RED_LEFT_LONG;
-  if(color == BLUE && side == RIGHT && goal == CENTER) autonToRun = BLUE_RIGHT_CENTER;
-  if(color == BLUE && side == RIGHT && goal == LONG) autonToRun = BLUE_RIGHT_LONG;
-  if(color == BLUE && side == LEFT && goal == CENTER) autonToRun = BLUE_LEFT_CENTER;
-  if(color == BLUE && side == LEFT && goal == LONG) autonToRun = BLUE_LEFT_LONG;
-  
-  // Display confirmation screen with alliance-colored background
-  Brain.Screen.clearScreen();
-  
-  if(color == RED) {
-    Brain.Screen.setFillColor(red);
-  } else {
-    Brain.Screen.setFillColor(blue);
+  while (true) {
+    const int WAIT_FOR_SCREEN_TIME = 500;  // Time to wait for the screen to be ready
+    // Step 1-3: Get user's three choices
+    Color color = selectColor();
+    wait(WAIT_FOR_SCREEN_TIME, msec);  // Debounce after color selection
+    Side side = selectSide();
+    wait(WAIT_FOR_SCREEN_TIME, msec);  // Debounce after side selection
+    if (side == SIDE_BACK) {
+      continue;  // Go back to color selection
+    }
+    Goal goal = selectGoal();
+    wait(WAIT_FOR_SCREEN_TIME, msec);  // Debounce after goal selection
+    if (goal == GOAL_BACK) {
+      continue;  // Go back to color selection
+    }
+    
+    // REVIEW SCREEN - Display selections with BACK and CONFIRM buttons
+    bool reviewComplete = false;
+    while (!reviewComplete) {
+      Brain.Screen.clearScreen();
+      
+      // Alliance-colored background
+      if(color == RED) {
+        Brain.Screen.setFillColor(red);
+      } else {
+        Brain.Screen.setFillColor(blue);
+      }
+      Brain.Screen.drawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+      
+      // Display text
+      Brain.Screen.setPenColor(white);
+      Brain.Screen.setFont(fontType::mono20);
+      
+      const char* colorStr = (color == RED) ? "RED" : "BLUE";
+      const char* sideStr = (side == RIGHT) ? "RIGHT" : "LEFT";
+      const char* goalStr = (goal == CENTER) ? "CENTER" : "LONG";
+      
+      Brain.Screen.printAt(TEXT_X, TEXT_SELECTED_Y, "Selected:");
+      Brain.Screen.printAt(TEXT_X, TEXT_COLOR_Y, colorStr);
+      Brain.Screen.printAt(TEXT_X, TEXT_SIDE_Y, sideStr);
+      Brain.Screen.printAt(TEXT_X, TEXT_GOAL_Y, goalStr);
+      
+      // Draw BACK button (top-right)
+      createButton(vex::color(100, 100, 100), BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT, "BACK");
+      
+      // Draw CONFIRM button (center-bottom)
+      createButton(green, CONFIRM_BUTTON_X, CONFIRM_BUTTON_Y, CONFIRM_BUTTON_WIDTH, CONFIRM_BUTTON_HEIGHT, "CONFIRM");
+      
+      // Wait for user input
+      while (!reviewComplete) {
+        if(buttonPressed(BACK_BUTTON_X, BACK_BUTTON_Y, BACK_BUTTON_WIDTH, BACK_BUTTON_HEIGHT)) {
+          wait(DEBOUNCE_TIME, msec);
+          reviewComplete = true;  // CHANGED: was reviewComplete = -1
+          break;
+        }
+        if(buttonPressed(CONFIRM_BUTTON_X, CONFIRM_BUTTON_Y, CONFIRM_BUTTON_WIDTH, CONFIRM_BUTTON_HEIGHT)) {
+          wait(DEBOUNCE_TIME, msec);
+          
+          // MOVED: Store selected color globally for color sensor filtering during match
+          selectedColor = color;
+          
+          // MOVED: Map the combination of choices to a specific autonomous routine
+          if(color == RED && side == RIGHT && goal == CENTER) autonToRun = RED_RIGHT_CENTER;
+          if(color == RED && side == RIGHT && goal == LONG) autonToRun = RED_RIGHT_LONG;
+          if(color == RED && side == LEFT && goal == CENTER) autonToRun = RED_LEFT_CENTER;
+          if(color == RED && side == LEFT && goal == LONG) autonToRun = RED_LEFT_LONG;
+          if(color == BLUE && side == RIGHT && goal == CENTER) autonToRun = BLUE_RIGHT_CENTER;
+          if(color == BLUE && side == RIGHT && goal == LONG) autonToRun = BLUE_RIGHT_LONG;
+          if(color == BLUE && side == LEFT && goal == CENTER) autonToRun = BLUE_LEFT_CENTER;
+          if(color == BLUE && side == LEFT && goal == LONG) autonToRun = BLUE_LEFT_LONG;
+          
+          // MOVED: Display confirmation screen with alliance-colored background
+          Brain.Screen.clearScreen();
+          
+          if(color == RED) {
+            Brain.Screen.setFillColor(red);
+          } else {
+            Brain.Screen.setFillColor(blue);
+          }
+          Brain.Screen.drawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+          
+          Brain.Screen.setPenColor(white);
+          Brain.Screen.setFont(fontType::mono20);
+          
+          Brain.Screen.printAt(TEXT_X, TEXT_SELECTED_Y, "Selected:");
+          Brain.Screen.printAt(TEXT_X, TEXT_COLOR_Y, colorStr);
+          Brain.Screen.printAt(TEXT_X, TEXT_SIDE_Y, sideStr);
+          Brain.Screen.printAt(TEXT_X, TEXT_GOAL_Y, goalStr);
+          
+          return;  // CHANGED: was break; - now exits the entire function
+        }
+        wait(LOOP_DELAY, msec);
+      }
+    }
+    // CHANGED: removed the code that was after this point (selectedColor assignment, autonToRun mapping, final display, and break)
   }
-  Brain.Screen.drawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
-  
-  Brain.Screen.setPenColor(white);
-  Brain.Screen.setFont(fontType::mono20);
-  
-  const char* colorStr = (color == RED) ? "RED" : "BLUE";
-  const char* sideStr = (side == RIGHT) ? "RIGHT" : "LEFT";
-  const char* goalStr = (goal == CENTER) ? "CENTER" : "LONG";
-  
-  Brain.Screen.printAt(TEXT_X, TEXT_SELECTED_Y, "Selected:");
-  Brain.Screen.printAt(TEXT_X, TEXT_COLOR_Y, colorStr);
-  Brain.Screen.printAt(TEXT_X, TEXT_SIDE_Y, sideStr);
-  Brain.Screen.printAt(TEXT_X, TEXT_GOAL_Y, goalStr);
-  
-  wait(DISPLAY_TIME, msec);
 }
 
 // =============================================================================
@@ -591,10 +669,34 @@ const double DEGREES_PER_INCH = 27.0;  // wheel circumference
 // -----------------------------------------------
 // --------------- AUTON PARAMS ------------------
 // -----------------------------------------------
-const int FORWARD_SPEED = 30;
+const float FORWARD_SPEED = 42.5;
 const int TURN_SPEED = 30;
-const int SCORING_SPEED = 45;
+const int SCORING_SPEED = 100;
 const int WAIT_BETWEEN_ACTIONS = 100;  // in milliseconds
+const float APPROACHCLUSTER_MULTIPLIER = 0.75; // Multiplier for forward speed when approaching cluster with intake
+
+const bool SUNROOF_OPEN = true;
+const bool SUNROOF_CLOSED = false;
+
+bool prev_sunroof_state = true;
+bool current_sunroof_state = false;
+
+void toggleSunroof() {
+  if (Controller1.ButtonDown.PRESSED) {
+    bool open_sunroof = (prev_sunroof_state == true && current_sunroof_state == false);
+    bool close_sunroof = (prev_sunroof_state == false && current_sunroof_state == true);
+    if (open_sunroof){
+      sunroof.set(SUNROOF_OPEN);
+      prev_sunroof_state = false;
+      current_sunroof_state = true;
+    }
+    else if (close_sunroof) {
+      sunroof.set(SUNROOF_CLOSED);
+      prev_sunroof_state = true;
+      current_sunroof_state = false;
+    }
+  }
+}
 
 double degreesPerInch() {
   return DEGREES_PER_INCH;
@@ -738,26 +840,25 @@ void strafeRightInches(double inches, int speedPct) {
 // =============================================================================
 // AUTONOMOUS ROUTINES - ALL 8 VARIANTS
 // =============================================================================
-
 void BlueLeftCenter() {
   driveForwardInches(12, FORWARD_SPEED);
   turnToAngle(-45, TURN_SPEED);
   Intake(80, 0);
-  driveForwardInches(17.5, FORWARD_SPEED * 0.5);
+  driveForwardInches(17.5, FORWARD_SPEED);
   driveForwardInches(1.75, -FORWARD_SPEED);
   Dejam(100);
   wait(0.5, sec);
   turnToAngle(45, TURN_SPEED);     
   driveForwardInches(14, FORWARD_SPEED);
-  Middlescore(SCORING_SPEED*1.5, 0);
+  Middlescore(SCORING_SPEED, 0);
   wait(1.5, sec);
   Dejam(100);
   wait(0.5, sec);
-  Middlescore(SCORING_SPEED*1.5, 0);
+  Middlescore(SCORING_SPEED, 0);
   wait(1.5, sec);
   Dejam(100);
   wait(0.5, sec);
-  Middlescore(SCORING_SPEED*1.5, 0);
+  Middlescore(SCORING_SPEED, 0);
 }
 
 void BlueLeftLong() {
@@ -778,122 +879,122 @@ void BlueLeftLong() {
 }
 
 void BlueRightCenter() {
-  driveForwardInches(12, FORWARD_SPEED*3);
-  turnToAngle(45, TURN_SPEED);
-  Intake(80, 0);
-  driveForwardInches(20, FORWARD_SPEED * 3);
-  driveForwardInches(5, -FORWARD_SPEED*3);
-  Dejam(100);
-  wait(0.5, sec);
-  turnToAngle(-45, TURN_SPEED);     
-  driveForwardInches(17, FORWARD_SPEED*3);
-  driveForwardInches(2, -FORWARD_SPEED*3);
-  Bottomscore(SCORING_SPEED*2, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Bottomscore(SCORING_SPEED*2, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Bottomscore(SCORING_SPEED*2, 0);
-  driveForwardInches(36, -FORWARD_SPEED*2);
-}
-
-void BlueRightLong() {
-  driveForwardInches(12, FORWARD_SPEED*2);
-  turnToAngle(45, TURN_SPEED*2);
-  Intake(80, 0);
-  driveForwardInches(20, FORWARD_SPEED * 1.65);
-  wait(0.75, sec);
-  driveForwardInches(2.5, -FORWARD_SPEED*3);
-  Dejam(100);
-  wait(0.75, sec);
-  strafeRightInches(29, FORWARD_SPEED*3);
-  turnToAngle(0, TURN_SPEED*2);
-  driveForwardInches(12, FORWARD_SPEED*3);
-  Topscore(SCORING_SPEED*2, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Topscore(SCORING_SPEED*2, 0);
-}
-
-void RedLeftCenter() {
-  driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(-45, TURN_SPEED);
-  Intake(80, 0);
-  driveForwardInches(17.5, FORWARD_SPEED * 0.5);
-  driveForwardInches(1.75, -FORWARD_SPEED);
-  Dejam(100);
-  wait(0.5, sec);
-  turnToAngle(45, TURN_SPEED);     
-  driveForwardInches(14, FORWARD_SPEED);
-  Middlescore(SCORING_SPEED*1.5, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Middlescore(SCORING_SPEED*1.5, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Middlescore(SCORING_SPEED*1.5, 0);
-}
-
-void RedLeftLong() {
-  driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(-45, TURN_SPEED);
-  Intake(80, 0);
-  driveForwardInches(17.5, FORWARD_SPEED * 0.5);
-  Dejam(100);
-  wait(0.5, sec);
-  strafeRightInches(32.65, -FORWARD_SPEED);
-  turnToAngle(0, TURN_SPEED);
-  driveForwardInches(9.95, FORWARD_SPEED);
-  Topscore(SCORING_SPEED*3, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Topscore(SCORING_SPEED*3, 0);
-}
-
-void RedRightCenter() {
   driveForwardInches(12, FORWARD_SPEED);
   turnToAngle(45, TURN_SPEED);
   Intake(80, 0);
-  driveForwardInches(20, FORWARD_SPEED * 0.5);
+  driveForwardInches(20, FORWARD_SPEED);
   driveForwardInches(5, -FORWARD_SPEED);
   Dejam(100);
   wait(0.5, sec);
   turnToAngle(-45, TURN_SPEED);     
   driveForwardInches(17, FORWARD_SPEED);
   driveForwardInches(2, -FORWARD_SPEED);
-  Bottomscore(SCORING_SPEED*2, 0);
+  Bottomscore(SCORING_SPEED, 0);
   wait(1.5, sec);
   Dejam(100);
   wait(0.5, sec);
-  Bottomscore(SCORING_SPEED*2, 0);
+  Bottomscore(SCORING_SPEED, 0);
   wait(1.5, sec);
   Dejam(100);
   wait(0.5, sec);
-  Bottomscore(SCORING_SPEED*2, 0);
+  Bottomscore(SCORING_SPEED, 0);
+  driveForwardInches(36, -FORWARD_SPEED);
+}
+
+void BlueRightLong() {
+  driveForwardInches(12, FORWARD_SPEED);
+  turnToAngle(45, TURN_SPEED);
+  Intake(80, 0);
+  driveForwardInches(20, FORWARD_SPEED);
+  wait(0.75, sec);
+  driveForwardInches(2.5, -FORWARD_SPEED);
+  Dejam(100);
+  wait(0.75, sec);
+  strafeRightInches(29, FORWARD_SPEED);
+  turnToAngle(0, TURN_SPEED);
+  driveForwardInches(12, FORWARD_SPEED);
+  Topscore(SCORING_SPEED, 0);
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Topscore(SCORING_SPEED, 0);
+}
+
+void RedLeftCenter() {
+  driveForwardInches(12, FORWARD_SPEED);
+  turnToAngle(-45, TURN_SPEED);
+  Intake(80, 0);
+  driveForwardInches(17.5, FORWARD_SPEED);
+  driveForwardInches(1.75, -FORWARD_SPEED);
+  Dejam(100);
+  wait(0.5, sec);
+  turnToAngle(45, TURN_SPEED);     
+  driveForwardInches(14, FORWARD_SPEED);
+  Middlescore(SCORING_SPEED, 0);
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Middlescore(SCORING_SPEED, 0);
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Middlescore(SCORING_SPEED, 0);
+}
+
+void RedLeftLong() {
+  driveForwardInches(12, FORWARD_SPEED);
+  turnToAngle(-45, TURN_SPEED);
+  Intake(80, 0);
+  driveForwardInches(17.5, FORWARD_SPEED*APPROACHCLUSTER_MULTIPLIER);
+  Dejam(100);
+  wait(0.5, sec);
+  strafeRightInches(31, -FORWARD_SPEED);
+  turnToAngle(0, TURN_SPEED);
+  driveForwardInches(14, FORWARD_SPEED);
+  Topscore(SCORING_SPEED, 0);
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Topscore(SCORING_SPEED, 0);
+}
+
+void RedRightCenter() {
+  driveForwardInches(12, FORWARD_SPEED);
+  turnToAngle(45, TURN_SPEED);
+  Intake(80, 0);
+  driveForwardInches(20, FORWARD_SPEED);
+  driveForwardInches(5, -FORWARD_SPEED);
+  Dejam(100);
+  wait(0.5, sec);
+  turnToAngle(-45, TURN_SPEED);     
+  driveForwardInches(17, FORWARD_SPEED);
+  driveForwardInches(2, -FORWARD_SPEED);
+  Bottomscore(SCORING_SPEED, 0);
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Bottomscore(SCORING_SPEED, 0);
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
+  Bottomscore(SCORING_SPEED, 0);
 }
 
 void RedRightLong() {
   driveForwardInches(12, FORWARD_SPEED);
   turnToAngle(45, TURN_SPEED);
   Intake(80, 0);
-  driveForwardInches(17.5, FORWARD_SPEED * 0.5);
+  driveForwardInches(17.5, FORWARD_SPEED);
   Dejam(100);
   wait(0.5, sec);
   strafeRightInches(29, FORWARD_SPEED);
   turnToAngle(0, TURN_SPEED);
   driveForwardInches(10, FORWARD_SPEED);
-  Topscore(SCORING_SPEED*2, 0);
+  Topscore(SCORING_SPEED, 0);
   wait(1.5, sec);
   Dejam(100);
   wait(0.5, sec);
-  Topscore(SCORING_SPEED*2, 0);
+  Topscore(SCORING_SPEED, 0);
 }
 
 // =============================================================================
@@ -934,7 +1035,8 @@ void switchMatchAuton(){
 
 void pre_auton(void) {
  // All activities that occur before the competition starts
-  autonSelector();
+  //autonSelector();
+ // wait (1000, msec);
   gyroT.calibrate();
   while (gyroT.isCalibrating());
   wait (50, msec);
@@ -942,7 +1044,9 @@ void pre_auton(void) {
 }
 
 void autonomous(void) {
-  switchMatchAuton();
+  Brain.Screen.clearScreen();
+  // switchMatchAuton();
+  RedLeftLong();
 }
 
 
@@ -1019,6 +1123,7 @@ void usercontrol(void) {
      vexc = false;
    }
 
+    toggleSunroof();
    int Y = Controller1.Axis3.position();
    int X = Controller1.Axis4.position();
    int R = Controller1.Axis1.position();
