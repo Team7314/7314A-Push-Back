@@ -689,14 +689,14 @@ void strafeRightInches(double inches, int speedPct) {
 
 
 void firstScoringCycle() {
-// First scoring cycle
+  // First scoring cycle
   ////////////////////////////////////////////////////////////////////////
- driveForwardInches(12, FORWARD_SPEED);   // go forward 12"
+  driveForwardInches(12, FORWARD_SPEED);   // go forward 12"
   turnToAngle(-45, TURN_SPEED);         // turn right 90 degrees
   Intake(80, 0);
   driveForwardInches(17.5, FORWARD_SPEED * 0.5);   // go forward 15.5"
   driveForwardInches(4, -FORWARD_SPEED);   // go backward 15.5"
-  turnToAngle(45, TURN_SPEED);     
+  turnToAngle(90, TURN_SPEED);     
   //drive across field
   driveForwardInches(26, FORWARD_SPEED * 2);    // go forward 52"
   turnToAngle(45, TURN_SPEED);
@@ -706,12 +706,12 @@ void firstScoringCycle() {
   Dejam(100);
   strafeRightInches(30, FORWARD_SPEED);    // strafe right 29"
   turnToAngle(0, TURN_SPEED);
-   //strafeRightInches(2, FORWARD_SPEED);    // strafe right 2"
+  //strafeRightInches(2, FORWARD_SPEED);    // strafe right 2"
   driveForwardInches(15, FORWARD_SPEED);   // go forward 10"
   RB.spin(forward, 30, pct);
   wait(200, msec);
   drivebrake();
- Topscore(SCORING_SPEED * 2, 0);    // score top
+  Topscore(SCORING_SPEED * 2, 0);    // score top
   wait(2, sec);
   Dejam(100);
   wait(0.5, sec);
@@ -726,7 +726,7 @@ void firstScoringCycle() {
   Topscore(SCORING_SPEED * 2, 0);
   wait(2, sec);
   Ibrake();
-    ////////////////////////////////////////////////////////////////////////
+  ////////////////////////////////////////////////////////////////////////
 }
 
 void secondScoringCycle() {
@@ -812,10 +812,9 @@ void autonParking2() {
 void autonomous(void) {
   // ..........................................................................
  // Insert autonomous user code here.
-inchdrive(-8);
-wait(1, sec);
-Xdrive(100, 100, 100, 100, 1);
-
+ firstScoringCycle();
+ secondScoringCycle();
+ autonParking2();
 
 
 

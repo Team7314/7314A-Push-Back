@@ -669,9 +669,12 @@ const double DEGREES_PER_INCH = 27.0;  // wheel circumference
 // -----------------------------------------------
 // --------------- AUTON PARAMS ------------------
 // -----------------------------------------------
+const bool LEFT_SIDE = true;
+const bool RIGHT_SIDE = false;
 const float FORWARD_SPEED = 42.5;
 const int TURN_SPEED = 30;
-const int SCORING_SPEED = 100;
+const int SCORING_SPEED = 90;
+const int BOTTOM_SCORING_SPEED = 80;
 const int WAIT_BETWEEN_ACTIONS = 100;  // in milliseconds
 const float APPROACHCLUSTER_MULTIPLIER = 0.75; // Multiplier for forward speed when approaching cluster with intake
 
@@ -840,117 +843,53 @@ void strafeRightInches(double inches, int speedPct) {
 // =============================================================================
 // AUTONOMOUS ROUTINES - ALL 8 VARIANTS
 // =============================================================================
-void BlueLeftCenter() {
-  driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(-45, TURN_SPEED);
-  Intake(80, 0);
-  driveForwardInches(17.5, FORWARD_SPEED);
-  driveForwardInches(1.75, -FORWARD_SPEED);
-  Dejam(100);
-  wait(0.5, sec);
-  turnToAngle(45, TURN_SPEED);     
-  driveForwardInches(14, FORWARD_SPEED);
-  Middlescore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Middlescore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Middlescore(SCORING_SPEED, 0);
+
+void scoreAuton(bool side){
+  if(side == LEFT_SIDE)
+  {
+    Middlescore(SCORING_SPEED, 0);
+    wait(1.5, sec);
+    Dejam(100);
+    wait(0.5, sec);
+    Middlescore(SCORING_SPEED, 0);
+    wait(1.5, sec);
+    Dejam(100);
+    wait(0.5, sec);
+    Middlescore(SCORING_SPEED, 0);
+  }
+  else
+  {
+    Bottomscore(BOTTOM_SCORING_SPEED, 0);
+    wait(1.5, sec);
+    Dejam(100);
+    wait(0.5, sec);
+    Bottomscore(BOTTOM_SCORING_SPEED, 0);
+    wait(1.5, sec);
+    Dejam(100);
+    wait(0.5, sec);
+    Bottomscore(BOTTOM_SCORING_SPEED, 0);
+  }
 }
 
-void BlueLeftLong() {
-  driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(-45, TURN_SPEED);
-  Intake(80, 0);
-  driveForwardInches(17.5, FORWARD_SPEED * 0.5);
-  Dejam(100);
-  wait(0.5, sec);
-  strafeRightInches(31.85, -FORWARD_SPEED);
-  turnToAngle(0, TURN_SPEED);
-  driveForwardInches(10.25, FORWARD_SPEED);
-  Topscore(SCORING_SPEED*3, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Topscore(SCORING_SPEED*3, 0);
-}
+void longAuton(bool side){
+  int side_sign = 1;
+  if(side == LEFT_SIDE) side_sign = -1;
 
-void BlueRightCenter() {
   driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(45, TURN_SPEED);
+  turnToAngle(45*side_sign, TURN_SPEED);
   Intake(80, 0);
-  driveForwardInches(20, FORWARD_SPEED);
-  driveForwardInches(5, -FORWARD_SPEED);
-  Dejam(100);
-  wait(0.5, sec);
-  turnToAngle(-45, TURN_SPEED);     
-  driveForwardInches(17, FORWARD_SPEED);
-  driveForwardInches(2, -FORWARD_SPEED);
-  Bottomscore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Bottomscore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Bottomscore(SCORING_SPEED, 0);
-  driveForwardInches(36, -FORWARD_SPEED);
-}
-
-void BlueRightLong() {
-  driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(45, TURN_SPEED);
-  Intake(80, 0);
-  driveForwardInches(20, FORWARD_SPEED);
-  wait(0.75, sec);
+  driveForwardInches(20, FORWARD_SPEED * APPROACHCLUSTER_MULTIPLIER);
   driveForwardInches(2.5, -FORWARD_SPEED);
   Dejam(100);
-  wait(0.75, sec);
-  strafeRightInches(29, FORWARD_SPEED);
-  turnToAngle(0, TURN_SPEED);
-  driveForwardInches(12, FORWARD_SPEED);
-  Topscore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
   wait(0.5, sec);
-  Topscore(SCORING_SPEED, 0);
-}
-
-void RedLeftCenter() {
-  driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(-45, TURN_SPEED);
-  Intake(80, 0);
-  driveForwardInches(17.5, FORWARD_SPEED);
-  driveForwardInches(1.75, -FORWARD_SPEED);
-  Dejam(100);
-  wait(0.5, sec);
-  turnToAngle(45, TURN_SPEED);     
-  driveForwardInches(14, FORWARD_SPEED);
-  Middlescore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Middlescore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Middlescore(SCORING_SPEED, 0);
-}
-
-void RedLeftLong() {
-  driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(-45, TURN_SPEED);
-  Intake(80, 0);
-  driveForwardInches(17.5, FORWARD_SPEED*APPROACHCLUSTER_MULTIPLIER);
-  Dejam(100);
-  wait(0.5, sec);
-  strafeRightInches(31, -FORWARD_SPEED);
+  strafeRightInches(31, FORWARD_SPEED*side_sign);
   turnToAngle(0, TURN_SPEED);
   driveForwardInches(14, FORWARD_SPEED);
+  driveForwardInches(0.1, -FORWARD_SPEED);
+  Topscore(SCORING_SPEED, 0);
+  wait(1.5, sec);
+  Dejam(100);
+  wait(0.5, sec);
   Topscore(SCORING_SPEED, 0);
   wait(1.5, sec);
   Dejam(100);
@@ -958,73 +897,53 @@ void RedLeftLong() {
   Topscore(SCORING_SPEED, 0);
 }
 
-void RedRightCenter() {
+void centerAuton(bool side){
+  int side_sign = 1;
+  if(side == LEFT_SIDE) side_sign = -1;
+
   driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(45, TURN_SPEED);
+  turnToAngle(45*side_sign, TURN_SPEED);
   Intake(80, 0);
-  driveForwardInches(20, FORWARD_SPEED);
-  driveForwardInches(5, -FORWARD_SPEED);
+  // Approach cluster slowly for better intake performance
+  driveForwardInches(20, FORWARD_SPEED * APPROACHCLUSTER_MULTIPLIER);
+  driveForwardInches(4, -FORWARD_SPEED);
   Dejam(100);
   wait(0.5, sec);
-  turnToAngle(-45, TURN_SPEED);     
-  driveForwardInches(17, FORWARD_SPEED);
+  turnToAngle(-45*side_sign, TURN_SPEED);     
+  driveForwardInches(18, FORWARD_SPEED);
   driveForwardInches(2, -FORWARD_SPEED);
-  Bottomscore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Bottomscore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Bottomscore(SCORING_SPEED, 0);
-}
 
-void RedRightLong() {
-  driveForwardInches(12, FORWARD_SPEED);
-  turnToAngle(45, TURN_SPEED);
-  Intake(80, 0);
-  driveForwardInches(17.5, FORWARD_SPEED);
-  Dejam(100);
-  wait(0.5, sec);
-  strafeRightInches(29, FORWARD_SPEED);
-  turnToAngle(0, TURN_SPEED);
-  driveForwardInches(10, FORWARD_SPEED);
-  Topscore(SCORING_SPEED, 0);
-  wait(1.5, sec);
-  Dejam(100);
-  wait(0.5, sec);
-  Topscore(SCORING_SPEED, 0);
+  // Scoring
+  scoreAuton(side);
 }
-
 // =============================================================================
 // SWITCH STATEMENT - EXECUTES SELECTED AUTONOMOUS
 // =============================================================================
 void switchMatchAuton(){
     switch(autonToRun) {
     case RED_RIGHT_CENTER:
-      RedRightCenter();
+      centerAuton(RIGHT_SIDE);
       break;
     case RED_RIGHT_LONG:
-      RedRightLong();
+      longAuton(RIGHT_SIDE);
       break;
     case RED_LEFT_CENTER:
-      RedLeftCenter();
+      centerAuton(LEFT_SIDE);
       break;
     case RED_LEFT_LONG:
-      RedLeftLong();
+      longAuton(LEFT_SIDE);
       break;
     case BLUE_RIGHT_CENTER:
-      BlueRightCenter();
+      centerAuton(RIGHT_SIDE);
       break;
     case BLUE_RIGHT_LONG:
-      BlueRightLong();
+      longAuton(RIGHT_SIDE);
       break;
     case BLUE_LEFT_CENTER:
-      BlueLeftCenter();
+      centerAuton(LEFT_SIDE);
       break;
     case BLUE_LEFT_LONG:
-      BlueLeftLong();
+      longAuton(LEFT_SIDE);
       break;
   }
 }
@@ -1035,8 +954,8 @@ void switchMatchAuton(){
 
 void pre_auton(void) {
  // All activities that occur before the competition starts
-  //autonSelector();
- // wait (1000, msec);
+  autonSelector();
+  wait (1000, msec);
   gyroT.calibrate();
   while (gyroT.isCalibrating());
   wait (50, msec);
@@ -1045,8 +964,12 @@ void pre_auton(void) {
 
 void autonomous(void) {
   Brain.Screen.clearScreen();
-  // switchMatchAuton();
-  RedLeftLong();
+   switchMatchAuton();
+  // centerAuton(LEFT_SIDE);
+  // centerAuton(RIGHT_SIDE);
+
+  // longAuton(LEFT_SIDE);
+  //longAuton(RIGHT_SIDE);
 }
 
 
@@ -1115,11 +1038,11 @@ void usercontrol(void) {
     Descorer.set(false);
    }
    else if(Controller1.ButtonL2.pressing()) {
-     Deloader.set(true);
+     Deloader.set(false);
      vexc = false;
    }
    else if(Controller1.ButtonL1.pressing()){
-     Deloader.set(false);
+     Deloader.set(true);
      vexc = false;
    }
 
