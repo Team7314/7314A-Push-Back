@@ -967,10 +967,10 @@ void pre_auton(void) {
 
 void autonomous(void) {
   Brain.Screen.clearScreen();
-   //switchMatchAuton();
+   // switchMatchAuton();
   // centerAuton(LEFT_SIDE);
   // centerAuton(RIGHT_SIDE);
-   longAuton(LEFT_SIDE);
+  // longAuton(LEFT_SIDE);
   //longAuton(RIGHT_SIDE);
 }
 
@@ -987,7 +987,7 @@ void usercontrol(void) {
   bool vexc = false;
 
   while (1) {
-  //  Display();
+    Display();
    colorsensor(vexc);
 
    if( Controller1.ButtonA.pressing()) {
